@@ -1,0 +1,90 @@
+'use client';
+
+import { format, isBefore, startOfDay } from 'date-fns';
+import { ko } from 'date-fns/locale';
+
+const leaveTypeLabels = {
+  FULL: '연차',
+  AM_HALF: '오전 반차',
+  PM_HALF: '오후 반차',
+};
+
+const leaveTypeBadges = {
+  FULL: 'bg-red-100 text-red-800',
+  AM_HALF: 'bg-yellow-100 text-yellow-800',
+  PM_HALF: 'bg-green-100 text-green-800',
+};
+
+export default function LeaveList({ leaves, onCancel }) {
+  const sortedLeaves = [...leaves].sort((a, b) => {
+    return new Date(b.leave_date) - new Date(a.leave_date);
+  });
+
+  const canCancelLeave = (leaveDate) => {
+    const today = startOfDay(new Date());
+    const leave = startOfDay(new Date(leaveDate));
+    return leave >= today;
+  };
+
+  if (sortedLeaves.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>신청한 연차가 없습니다.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+      {sortedLeaves.map((leave) => {
+        const leaveDate = new Date(leave.leave_date);
+        const isPast = isBefore(startOfDay(leaveDate), startOfDay(new Date()));
+        const canCancel = canCancelLeave(leave.leave_date) && leave.status === 'APPROVED';
+
+        return (
+          <div
+            key={leave.id}
+            className={`p-4 border rounded-lg ${
+              leave.status === 'CANCELLED'
+                ? 'bg-gray-50 border-gray-300'
+                : 'bg-white border-gray-200'
+            }`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-gray-900">
+                    {format(leaveDate, 'M월 d일 (E)', { locale: ko })}
+                  </span>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded ${
+                      leaveTypeBadges[leave.leave_type]
+                    }`}
+                  >
+                    {leaveTypeLabels[leave.leave_type]}
+                  </span>
+                </div>
+
+                {leave.status === 'CANCELLED' && (
+                  <p className="text-xs text-gray-500">취소됨</p>
+                )}
+                {isPast && leave.status === 'APPROVED' && (
+                  <p className="text-xs text-gray-500">사용완료</p>
+                )}
+              </div>
+
+              {canCancel && (
+                <button
+                  onClick={() => onCancel(leave.id)}
+                  className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
+                >
+                  취소
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
