@@ -1,45 +1,67 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { query } from "@/lib/db";
 
 export const authOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          // 사용자 조회
+          const result = await query(
+            `SELECT id, email, name, password_hash, profile_image, is_admin
+             FROM users
+             WHERE email = $1`,
+            [credentials.email]
+          );
+
+          if (result.rows.length === 0) {
+            return null;
+          }
+
+          const user = result.rows[0];
+
+          // 비밀번호 검증
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password_hash
+          );
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id.toString(),
+            email: user.email,
+            name: user.name,
+            image: user.profile_image,
+            isAdmin: user.is_admin
+          };
+        } catch (error) {
+          console.error("Authorization error:", error);
+          return null;
+        }
+      }
+    })
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      try {
-        // 사용자 확인 또는 생성
-        const result = await query(
-          `INSERT INTO users (google_id, email, name, profile_image)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (google_id) 
-           DO UPDATE SET 
-             email = EXCLUDED.email,
-             name = EXCLUDED.name,
-             profile_image = EXCLUDED.profile_image
-           RETURNING id`,
-          [user.id, user.email, user.name, user.image]
-        );
-
-        const userId = result.rows[0].id;
-
-        // 연차 잔액 초기화 (존재하지 않는 경우)
-        await query(
-          `INSERT INTO leave_balance (user_id, total_leaves, used_leaves)
-           VALUES ($1, 0, 0)
-           ON CONFLICT (user_id) DO NOTHING`,
-          [userId]
-        );
-
-        return true;
-      } catch (error) {
-        console.error("Sign in error:", error);
-        return false;
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.isAdmin = user.isAdmin;
       }
+      return token;
     },
     async session({ session, token }) {
       if (session?.user) {
@@ -68,6 +90,9 @@ export const authOptions = {
   },
   pages: {
     signIn: "/login",
+  },
+  session: {
+    strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

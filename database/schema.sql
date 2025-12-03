@@ -1,9 +1,9 @@
 -- 사용자 테이블
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  google_id VARCHAR(255) UNIQUE NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
   profile_image TEXT,
   is_admin BOOLEAN DEFAULT FALSE,
   slack_user_id VARCHAR(255),

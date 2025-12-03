@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Obud 근태관리 시스템",
-  description: "스타트업 연차 관리 시스템",
+  description: "Obud 스타트업 연차 관리 시스템",
 };
 
 export default function RootLayout({ children }) {
