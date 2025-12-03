@@ -6,7 +6,7 @@ import AuthProvider from "@/components/AuthProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "근태관리 시스템",
+  title: "Obud 근태관리 시스템",
   description: "스타트업 연차 관리 시스템",
 };
 

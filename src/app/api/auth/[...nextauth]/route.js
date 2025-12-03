@@ -1,6 +1,6 @@
-import NextAuth from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import { query } from '@/lib/db';
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import { query } from "@/lib/db";
 
 export const authOptions = {
   providers: [
@@ -37,7 +37,7 @@ export const authOptions = {
 
         return true;
       } catch (error) {
-        console.error('Sign in error:', error);
+        console.error("Sign in error:", error);
         return false;
       }
     },
@@ -67,7 +67,7 @@ export const authOptions = {
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
