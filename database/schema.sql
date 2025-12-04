@@ -1,12 +1,11 @@
--- 사용자 테이블
+-- 사용자 테이블 (Google OAuth 사용)
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
   profile_image TEXT,
   is_admin BOOLEAN DEFAULT FALSE,
-  slack_user_id VARCHAR(255),
+  slack_user_id VARCHAR(255), -- Slack 워크스페이스 사용자 ID (로그인 시 자동 설정)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
