@@ -66,8 +66,16 @@ export const authOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.isAdmin = user.isAdmin;
+        // Google 로그인 시 DB에서 사용자 정보 조회
+        const result = await query(
+          `SELECT id, is_admin FROM users WHERE email = $1`,
+          [user.email]
+        );
+
+        if (result.rows.length > 0) {
+          token.id = result.rows[0].id;
+          token.isAdmin = result.rows[0].is_admin;
+        }
       }
       return token;
     },
