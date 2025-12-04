@@ -18,12 +18,13 @@ export async function GET(req) {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // 오늘 연차인 사람들 조회
+    // 오늘 연차인 사람들 조회 (시작일과 종료일 사이에 오늘이 포함되는 경우)
     const result = await query(
       `SELECT lr.id, lr.leave_type, u.slack_user_id, u.name
        FROM leave_requests lr
        JOIN users u ON lr.user_id = u.id
-       WHERE lr.leave_date = $1 AND lr.status = 'APPROVED'
+       WHERE lr.start_date <= $1 AND lr.end_date >= $1
+         AND lr.status = 'APPROVED'
          AND u.slack_user_id IS NOT NULL`,
       [today]
     );

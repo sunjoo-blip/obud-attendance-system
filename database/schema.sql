@@ -23,7 +23,8 @@ CREATE TABLE leave_balance (
 CREATE TABLE leave_requests (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  leave_date DATE NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
   leave_type VARCHAR(20) NOT NULL CHECK (leave_type IN ('FULL', 'AM_HALF', 'PM_HALF')),
   status VARCHAR(20) NOT NULL DEFAULT 'APPROVED' CHECK (status IN ('APPROVED', 'CANCELLED')),
   google_calendar_event_id VARCHAR(255),
@@ -42,6 +43,6 @@ CREATE TABLE monthly_leave_grants (
 );
 
 -- 인덱스 추가
-CREATE INDEX idx_leave_requests_user_date ON leave_requests(user_id, leave_date);
-CREATE INDEX idx_leave_requests_date ON leave_requests(leave_date);
+CREATE INDEX idx_leave_requests_user_date ON leave_requests(user_id, start_date, end_date);
+CREATE INDEX idx_leave_requests_date ON leave_requests(start_date, end_date);
 CREATE INDEX idx_monthly_grants_month ON monthly_leave_grants(grant_month);

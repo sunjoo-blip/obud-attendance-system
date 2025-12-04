@@ -37,13 +37,17 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
       .filter((leave) => leave.status === 'APPROVED')
       .map((leave) => {
         // YYYY-MM-DD 형식을 로컬 타임존으로 파싱
-        const [year, month, day] = leave.leave_date.split('-');
-        const date = new Date(year, month - 1, day);
+        const [startYear, startMonth, startDay] = leave.start_date.split('-');
+        const startDate = new Date(startYear, startMonth - 1, startDay);
+
+        const [endYear, endMonth, endDay] = leave.end_date.split('-');
+        const endDate = new Date(endYear, endMonth - 1, endDay);
+
         return {
           id: leave.id,
           title: leaveTypeLabels[leave.leave_type],
-          start: date,
-          end: date,
+          start: startDate,
+          end: endDate,
           allDay: true,
           resource: leave,
         };

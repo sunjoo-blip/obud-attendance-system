@@ -12,13 +12,14 @@ export async function GET(req) {
     const result = await query(
       `SELECT
         lr.id, lr.user_id,
-        TO_CHAR(lr.leave_date, 'YYYY-MM-DD') as leave_date,
+        TO_CHAR(lr.start_date, 'YYYY-MM-DD') as start_date,
+        TO_CHAR(lr.end_date, 'YYYY-MM-DD') as end_date,
         lr.leave_type, lr.status,
         lr.created_at, lr.cancelled_at,
         u.name as user_name, u.email as user_email
        FROM leave_requests lr
        JOIN users u ON lr.user_id = u.id
-       ORDER BY lr.leave_date DESC, u.name`
+       ORDER BY lr.start_date DESC, u.name`
     );
 
     return Response.json({ leaves: result.rows });

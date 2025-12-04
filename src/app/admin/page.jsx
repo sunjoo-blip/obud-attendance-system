@@ -220,47 +220,53 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {allLeaves
-                  .filter((leave) => leave.leave_date.startsWith(selectedMonth))
-                  .map((leave) => (
-                    <tr key={leave.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">{leave.leave_date}</td>
-                      <td className="py-3 px-4">{leave.user_name}</td>
-                      <td className="text-center py-3 px-4">
-                        <span
-                          className={`px-2 py-1 text-xs rounded ${
-                            leave.leave_type === "FULL"
-                              ? "bg-red-100 text-red-800"
-                              : leave.leave_type === "AM_HALF"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {leave.leave_type === "FULL"
-                            ? "연차"
-                            : leave.leave_type === "AM_HALF"
-                            ? "오전 반차"
-                            : "오후 반차"}
-                        </span>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        {leave.status === "APPROVED" ? (
-                          <span className="text-green-600">승인</span>
-                        ) : (
-                          <span className="text-gray-500">취소</span>
-                        )}
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        {leave.status === "APPROVED" && (
-                          <button
-                            onClick={() => handleDeleteLeave(leave.id)}
-                            className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
+                  .filter((leave) => leave.start_date.startsWith(selectedMonth))
+                  .map((leave) => {
+                    const dateDisplay =
+                      leave.start_date === leave.end_date
+                        ? leave.start_date
+                        : `${leave.start_date} ~ ${leave.end_date}`;
+                    return (
+                      <tr key={leave.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">{dateDisplay}</td>
+                        <td className="py-3 px-4">{leave.user_name}</td>
+                        <td className="text-center py-3 px-4">
+                          <span
+                            className={`px-2 py-1 text-xs rounded ${
+                              leave.leave_type === "FULL"
+                                ? "bg-red-100 text-red-800"
+                                : leave.leave_type === "AM_HALF"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
                           >
-                            삭제
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                            {leave.leave_type === "FULL"
+                              ? "연차"
+                              : leave.leave_type === "AM_HALF"
+                              ? "오전 반차"
+                              : "오후 반차"}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {leave.status === "APPROVED" ? (
+                            <span className="text-green-600">승인</span>
+                          ) : (
+                            <span className="text-gray-500">취소</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {leave.status === "APPROVED" && (
+                            <button
+                              onClick={() => handleDeleteLeave(leave.id)}
+                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
+                            >
+                              삭제
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>

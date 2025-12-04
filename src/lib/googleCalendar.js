@@ -20,30 +20,38 @@ const leaveTypeLabels = {
 
 export async function addGoogleCalendarEvent({
   userName,
-  leaveDate,
+  startDate,
+  endDate,
   leaveType,
 }) {
   try {
-    const date = new Date(leaveDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
     // 로컬 타임존 기준으로 날짜 문자열 생성 (UTC 변환 방지)
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const startDateStr = formatDate(start);
+    const endDateStr = formatDate(end);
 
     let event;
 
     if (leaveType === "FULL") {
-      // 종일 이벤트 (시간 없이 하루 종일)
-      const nextDay = new Date(date);
+      // 종일 이벤트 (시간 없이 날짜 범위)
+      const nextDay = new Date(end);
       nextDay.setDate(nextDay.getDate() + 1);
-      const nextDayStr = nextDay.toISOString().split("T")[0];
+      const nextDayStr = formatDate(nextDay);
 
       event = {
         summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
-        description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
+        description: `${userName}님의 ${leaveTypeLabels[leaveType]} (${startDateStr} ~ ${endDateStr})`,
         start: {
-          date: dateStr,
+          date: startDateStr,
         },
         end: {
           date: nextDayStr,
@@ -51,17 +59,17 @@ export async function addGoogleCalendarEvent({
         colorId: "4", // Cherry Blossom (연한 핑크)
       };
     } else {
-      // 반차 이벤트 (시간 지정)
+      // 반차 이벤트 (시간 지정, 시작일만 사용)
       let startTime, endTime;
 
       if (leaveType === "AM_HALF") {
         // 오전 반차
-        startTime = `${dateStr}T09:00:00+09:00`;
-        endTime = `${dateStr}T13:30:00+09:00`;
+        startTime = `${startDateStr}T09:00:00+09:00`;
+        endTime = `${startDateStr}T13:30:00+09:00`;
       } else {
         // 오후 반차
-        startTime = `${dateStr}T13:30:00+09:00`;
-        endTime = `${dateStr}T18:00:00+09:00`;
+        startTime = `${startDateStr}T13:30:00+09:00`;
+        endTime = `${startDateStr}T18:00:00+09:00`;
       }
 
       event = {
@@ -105,44 +113,51 @@ export async function deleteGoogleCalendarEvent(eventId) {
 
 export async function updateGoogleCalendarEvent(
   eventId,
-  { userName, leaveDate, leaveType }
+  { userName, startDate, endDate, leaveType }
 ) {
   try {
-    const date = new Date(leaveDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
     // 로컬 타임존 기준으로 날짜 문자열 생성 (UTC 변환 방지)
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const startDateStr = formatDate(start);
+    const endDateStr = formatDate(end);
 
     let event;
 
     if (leaveType === "FULL") {
-      // 종일 이벤트 (시간 없이 하루 종일)
-      const nextDay = new Date(date);
+      // 종일 이벤트 (시간 없이 날짜 범위)
+      const nextDay = new Date(end);
       nextDay.setDate(nextDay.getDate() + 1);
-      const nextDayStr = nextDay.toISOString().split("T")[0];
+      const nextDayStr = formatDate(nextDay);
 
       event = {
         summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
-        description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
+        description: `${userName}님의 ${leaveTypeLabels[leaveType]} (${startDateStr} ~ ${endDateStr})`,
         start: {
-          date: dateStr,
+          date: startDateStr,
         },
         end: {
           date: nextDayStr,
         },
       };
     } else {
-      // 반차 이벤트 (시간 지정)
+      // 반차 이벤트 (시간 지정, 시작일만 사용)
       let startTime, endTime;
 
       if (leaveType === "AM_HALF") {
-        startTime = `${dateStr}T09:00:00+09:00`;
-        endTime = `${dateStr}T13:30:00+09:00`;
+        startTime = `${startDateStr}T09:00:00+09:00`;
+        endTime = `${startDateStr}T13:30:00+09:00`;
       } else {
-        startTime = `${dateStr}T13:30:00+09:00`;
-        endTime = `${dateStr}T18:00:00+09:00`;
+        startTime = `${startDateStr}T13:30:00+09:00`;
+        endTime = `${startDateStr}T18:00:00+09:00`;
       }
 
       event = {

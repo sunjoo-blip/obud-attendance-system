@@ -1,18 +1,39 @@
 'use client';
 
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 export default function LeaveRequestModal({ selectedDate, onDateChange, onClose, onSuccess }) {
   const [leaveType, setLeaveType] = useState('FULL');
   const [loading, setLoading] = useState(false);
-  const [internalDate, setInternalDate] = useState(selectedDate || new Date());
+  const [startDate, setStartDate] = useState(selectedDate || new Date());
+  const [endDate, setEndDate] = useState(selectedDate || new Date());
 
-  const handleDateChange = (e) => {
+  const handleStartDateChange = (e) => {
     const newDate = new Date(e.target.value);
-    setInternalDate(newDate);
+    setStartDate(newDate);
+    // 시작일이 종료일보다 늦으면 종료일도 같이 업데이트
+    if (newDate > endDate) {
+      setEndDate(newDate);
+    }
     if (onDateChange) {
       onDateChange(newDate);
+    }
+  };
+
+  const handleEndDateChange = (e) => {
+    const newDate = new Date(e.target.value);
+    setEndDate(newDate);
+  };
+
+  // 총 사용 연차 계산
+  const calculateLeaveDays = () => {
+    const days = differenceInDays(endDate, startDate) + 1;
+    if (leaveType === 'FULL') {
+      return days;
+    } else {
+      // 반차는 시작일만 적용 (하루만)
+      return 0.5;
     }
   };
 
@@ -21,9 +42,16 @@ export default function LeaveRequestModal({ selectedDate, onDateChange, onClose,
     setLoading(true);
 
     try {
-      const dateToSubmit = internalDate;
+      // 반차는 하루만 선택 가능하도록 검증
+      if (leaveType !== 'FULL' && differenceInDays(endDate, startDate) > 0) {
+        alert('반차는 하루만 선택 가능합니다.');
+        setLoading(false);
+        return;
+      }
+
       // 타임존 이슈 방지를 위해 YYYY-MM-DD 형식으로 변환
-      const formattedDate = format(dateToSubmit, 'yyyy-MM-dd');
+      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
 
       const res = await fetch('/api/leaves', {
         method: 'POST',
@@ -31,7 +59,8 @@ export default function LeaveRequestModal({ selectedDate, onDateChange, onClose,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          leaveDate: formattedDate,
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
           leaveType,
         }),
       });
@@ -61,15 +90,36 @@ export default function LeaveRequestModal({ selectedDate, onDateChange, onClose,
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              날짜
+              시작일
             </label>
             <input
               type="date"
-              value={format(internalDate, 'yyyy-MM-dd')}
-              onChange={handleDateChange}
+              value={format(startDate, 'yyyy-MM-dd')}
+              onChange={handleStartDateChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              종료일
+            </label>
+            <input
+              type="date"
+              value={format(endDate, 'yyyy-MM-dd')}
+              onChange={handleEndDateChange}
+              min={format(startDate, 'yyyy-MM-dd')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          {/* 총 사용 연차 표시 */}
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">사용 연차:</span> {calculateLeaveDays()}일
+            </p>
           </div>
 
           <div className="mb-6">

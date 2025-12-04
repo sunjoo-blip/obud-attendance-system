@@ -29,26 +29,29 @@ export async function DELETE(req, { params }) {
       return Response.json({ error: '이미 취소된 연차입니다.' }, { status: 400 });
     }
 
-    // 당일까지만 취소 가능 확인
+    // 당일까지만 취소 가능 확인 (시작일 기준)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const leaveDate = new Date(leave.leave_date);
-    leaveDate.setHours(0, 0, 0, 0);
+    const startDate = new Date(leave.start_date);
+    startDate.setHours(0, 0, 0, 0);
 
-    if (leaveDate < today) {
+    if (startDate < today) {
       return Response.json({ error: '지난 연차는 취소할 수 없습니다.' }, { status: 400 });
     }
 
+    // 연차 사용량 계산
+    const start = new Date(leave.start_date);
+    const end = new Date(leave.end_date);
+    const daysDiff = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    const leaveAmount = leave.leave_type === 'FULL' ? daysDiff : 0.5;
+
     // 연차 취소
     await query(
-      `UPDATE leave_requests 
+      `UPDATE leave_requests
        SET status = 'CANCELLED', cancelled_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
       [id]
     );
-
-    // 연차 잔액 복구
-    const leaveAmount = leave.leave_type === 'FULL' ? 1 : 0.5;
     await query(
       `UPDATE leave_balance 
        SET used_leaves = used_leaves - $1,

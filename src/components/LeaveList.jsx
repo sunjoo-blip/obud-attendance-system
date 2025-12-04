@@ -17,13 +17,13 @@ const leaveTypeBadges = {
 
 export default function LeaveList({ leaves, onCancel }) {
   const sortedLeaves = [...leaves].sort((a, b) => {
-    return new Date(b.leave_date) - new Date(a.leave_date);
+    return new Date(b.start_date) - new Date(a.start_date);
   });
 
-  const canCancelLeave = (leaveDate) => {
+  const canCancelLeave = (startDate) => {
     const today = startOfDay(new Date());
     // YYYY-MM-DD 형식을 로컬 타임존으로 파싱
-    const [year, month, day] = leaveDate.split('-');
+    const [year, month, day] = startDate.split('-');
     const leave = startOfDay(new Date(year, month - 1, day));
     return leave >= today;
   };
@@ -40,10 +40,19 @@ export default function LeaveList({ leaves, onCancel }) {
     <div className="space-y-3 max-h-[600px] overflow-y-auto">
       {sortedLeaves.map((leave) => {
         // YYYY-MM-DD 형식을 로컬 타임존으로 파싱
-        const [year, month, day] = leave.leave_date.split('-');
-        const leaveDate = new Date(year, month - 1, day);
-        const isPast = isBefore(startOfDay(leaveDate), startOfDay(new Date()));
-        const canCancel = canCancelLeave(leave.leave_date) && leave.status === 'APPROVED';
+        const [startYear, startMonth, startDay] = leave.start_date.split('-');
+        const startDate = new Date(startYear, startMonth - 1, startDay);
+
+        const [endYear, endMonth, endDay] = leave.end_date.split('-');
+        const endDate = new Date(endYear, endMonth - 1, endDay);
+
+        const isPast = isBefore(startOfDay(endDate), startOfDay(new Date()));
+        const canCancel = canCancelLeave(leave.start_date) && leave.status === 'APPROVED';
+
+        // 날짜 범위 표시
+        const dateDisplay = startDate.getTime() === endDate.getTime()
+          ? format(startDate, 'M월 d일 (E)', { locale: ko })
+          : `${format(startDate, 'M월 d일', { locale: ko })} ~ ${format(endDate, 'M월 d일 (E)', { locale: ko })}`;
 
         return (
           <div
@@ -58,7 +67,7 @@ export default function LeaveList({ leaves, onCancel }) {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-gray-900">
-                    {format(leaveDate, 'M월 d일 (E)', { locale: ko })}
+                    {dateDisplay}
                   </span>
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded ${
