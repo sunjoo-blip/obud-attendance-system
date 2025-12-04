@@ -43,11 +43,15 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
         const [endYear, endMonth, endDay] = leave.end_date.split('-');
         const endDate = new Date(endYear, endMonth - 1, endDay);
 
+        // react-big-calendar는 end 날짜를 exclusive로 처리하므로 하루 추가
+        const calendarEndDate = new Date(endDate);
+        calendarEndDate.setDate(calendarEndDate.getDate() + 1);
+
         return {
           id: leave.id,
           title: leaveTypeLabels[leave.leave_type],
           start: startDate,
-          end: endDate,
+          end: calendarEndDate,
           allDay: true,
           resource: leave,
         };
