@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -16,15 +16,15 @@ export default function AdminPage() {
   );
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated' && !session?.user?.isAdmin) {
-      router.push('/dashboard');
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated" && !session?.user?.isAdmin) {
+      router.push("/dashboard");
     }
   }, [status, session, router]);
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.isAdmin) {
+    if (status === "authenticated" && session?.user?.isAdmin) {
       fetchData();
     }
   }, [status, session]);
@@ -32,8 +32,8 @@ export default function AdminPage() {
   const fetchData = async () => {
     try {
       const [usersRes, leavesRes] = await Promise.all([
-        fetch('/api/admin/users'),
-        fetch('/api/admin/leaves'),
+        fetch("/api/admin/users"),
+        fetch("/api/admin/leaves"),
       ]);
 
       const usersData = await usersRes.json();
@@ -42,54 +42,54 @@ export default function AdminPage() {
       setUsers(usersData.users || []);
       setAllLeaves(leavesData.leaves || []);
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      console.error("Failed to fetch data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleGrantLeave = async (userId) => {
-    const amount = prompt('지급할 연차 개수를 입력하세요:', '1');
+    const amount = prompt("지급할 연차 개수를 입력하세요:", "1");
     if (!amount) return;
 
     try {
-      const res = await fetch('/api/admin/grant-leave', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin/grant-leave", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, amount: parseFloat(amount) }),
       });
 
       if (res.ok) {
-        alert('연차가 지급되었습니다.');
+        alert("연차가 지급되었습니다.");
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error || '연차 지급에 실패했습니다.');
+        alert(data.error || "연차 지급에 실패했습니다.");
       }
     } catch (error) {
-      console.error('Grant leave error:', error);
-      alert('연차 지급 중 오류가 발생했습니다.');
+      console.error("Grant leave error:", error);
+      alert("연차 지급 중 오류가 발생했습니다.");
     }
   };
 
   const handleDeleteLeave = async (leaveId) => {
-    if (!confirm('이 연차를 삭제하시겠습니까?')) return;
+    if (!confirm("이 연차를 삭제하시겠습니까?")) return;
 
     try {
       const res = await fetch(`/api/admin/leaves/${leaveId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (res.ok) {
-        alert('연차가 삭제되었습니다.');
+        alert("연차가 삭제되었습니다.");
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error || '삭제에 실패했습니다.');
+        alert(data.error || "삭제에 실패했습니다.");
       }
     } catch (error) {
-      console.error('Delete leave error:', error);
-      alert('삭제 중 오류가 발생했습니다.');
+      console.error("Delete leave error:", error);
+      alert("삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -109,13 +109,13 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push("/dashboard")}
                 className="text-gray-600 hover:text-gray-900"
               >
                 ← 돌아가기
               </button>
               <h1 className="text-2xl font-bold text-gray-900">
-                👨‍💼 관리자 대시보드
+                Admin Dashboard
               </h1>
             </div>
           </div>
@@ -194,7 +194,7 @@ export default function AdminPage() {
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             📋 전체 연차 내역
           </h2>
-          
+
           <div className="mb-4">
             <label className="text-sm font-medium text-gray-700 mr-2">
               월 선택:
@@ -220,9 +220,7 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {allLeaves
-                  .filter((leave) =>
-                    leave.leave_date.startsWith(selectedMonth)
-                  )
+                  .filter((leave) => leave.leave_date.startsWith(selectedMonth))
                   .map((leave) => (
                     <tr key={leave.id} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4">{leave.leave_date}</td>
@@ -230,29 +228,29 @@ export default function AdminPage() {
                       <td className="text-center py-3 px-4">
                         <span
                           className={`px-2 py-1 text-xs rounded ${
-                            leave.leave_type === 'FULL'
-                              ? 'bg-red-100 text-red-800'
-                              : leave.leave_type === 'AM_HALF'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-green-100 text-green-800'
+                            leave.leave_type === "FULL"
+                              ? "bg-red-100 text-red-800"
+                              : leave.leave_type === "AM_HALF"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-800"
                           }`}
                         >
-                          {leave.leave_type === 'FULL'
-                            ? '연차'
-                            : leave.leave_type === 'AM_HALF'
-                            ? '오전 반차'
-                            : '오후 반차'}
+                          {leave.leave_type === "FULL"
+                            ? "연차"
+                            : leave.leave_type === "AM_HALF"
+                            ? "오전 반차"
+                            : "오후 반차"}
                         </span>
                       </td>
                       <td className="text-center py-3 px-4">
-                        {leave.status === 'APPROVED' ? (
+                        {leave.status === "APPROVED" ? (
                           <span className="text-green-600">승인</span>
                         ) : (
                           <span className="text-gray-500">취소</span>
                         )}
                       </td>
                       <td className="text-center py-3 px-4">
-                        {leave.status === 'APPROVED' && (
+                        {leave.status === "APPROVED" && (
                           <button
                             onClick={() => handleDeleteLeave(leave.id)}
                             className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm"

@@ -3,7 +3,7 @@
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const locales = {
   ko: ko,
@@ -30,11 +30,15 @@ const leaveTypeLabels = {
 };
 
 export default function LeaveCalendar({ leaves, onSelectDate }) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
   const events = useMemo(() => {
     return leaves
       .filter((leave) => leave.status === 'APPROVED')
       .map((leave) => {
-        const date = new Date(leave.leave_date);
+        // YYYY-MM-DD 형식을 로컬 타임존으로 파싱
+        const [year, month, day] = leave.leave_date.split('-');
+        const date = new Date(year, month - 1, day);
         return {
           id: leave.id,
           title: leaveTypeLabels[leave.leave_type],
@@ -59,6 +63,10 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
     onSelectDate(start);
   };
 
+  const handleNavigate = (newDate) => {
+    setCurrentDate(newDate);
+  };
+
   return (
     <div className="h-[600px]">
       <Calendar
@@ -70,6 +78,8 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
         eventPropGetter={eventStyleGetter}
         onSelectSlot={handleSelectSlot}
         selectable
+        date={currentDate}
+        onNavigate={handleNavigate}
         messages={{
           today: '오늘',
           previous: '이전',
@@ -88,7 +98,7 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
       />
       
       {/* 범례 */}
-      <div className="mt-4 flex gap-4 text-sm">
+      <div className="mt-8 flex gap-4 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-red-500 rounded"></div>
           <span>연차</span>

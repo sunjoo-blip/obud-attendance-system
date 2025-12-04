@@ -3,22 +3,35 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 
-export default function LeaveRequestModal({ selectedDate, onClose, onSuccess }) {
+export default function LeaveRequestModal({ selectedDate, onDateChange, onClose, onSuccess }) {
   const [leaveType, setLeaveType] = useState('FULL');
   const [loading, setLoading] = useState(false);
+  const [internalDate, setInternalDate] = useState(selectedDate || new Date());
+
+  const handleDateChange = (e) => {
+    const newDate = new Date(e.target.value);
+    setInternalDate(newDate);
+    if (onDateChange) {
+      onDateChange(newDate);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      const dateToSubmit = internalDate;
+      // 타임존 이슈 방지를 위해 YYYY-MM-DD 형식으로 변환
+      const formattedDate = format(dateToSubmit, 'yyyy-MM-dd');
+
       const res = await fetch('/api/leaves', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          leaveDate: selectedDate || new Date(),
+          leaveDate: formattedDate,
           leaveType,
         }),
       });
@@ -52,9 +65,9 @@ export default function LeaveRequestModal({ selectedDate, onClose, onSuccess }) 
             </label>
             <input
               type="date"
-              value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
-              onChange={(e) => {}}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={format(internalDate, 'yyyy-MM-dd')}
+              onChange={handleDateChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>

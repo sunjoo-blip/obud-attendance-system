@@ -12,8 +12,12 @@ export async function GET(req) {
     }
 
     const result = await query(
-      `SELECT * FROM leave_requests 
-       WHERE user_id = $1 
+      `SELECT id, user_id,
+              TO_CHAR(leave_date, 'YYYY-MM-DD') as leave_date,
+              leave_type, status, google_calendar_event_id,
+              created_at, cancelled_at
+       FROM leave_requests
+       WHERE user_id = $1
        ORDER BY leave_date DESC`,
       [session.user.id]
     );

@@ -41,7 +41,13 @@ export default function DashboardPage() {
   };
 
   const handleDateSelect = (date) => {
-    setSelectedDate(date);
+    // 로컬 타임존 기준으로 날짜 정규화 (시간 제거)
+    const normalizedDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    setSelectedDate(normalizedDate);
     setShowModal(true);
   };
 
@@ -99,7 +105,7 @@ export default function DashboardPage() {
                   onClick={() => router.push("/admin")}
                   className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                 >
-                  👨‍💼 관리자
+                  Admin
                 </button>
               )}
             </div>
@@ -181,6 +187,7 @@ export default function DashboardPage() {
       {showModal && (
         <LeaveRequestModal
           selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
           onClose={() => {
             setShowModal(false);
             setSelectedDate(null);

@@ -22,7 +22,9 @@ export default function LeaveList({ leaves, onCancel }) {
 
   const canCancelLeave = (leaveDate) => {
     const today = startOfDay(new Date());
-    const leave = startOfDay(new Date(leaveDate));
+    // YYYY-MM-DD 형식을 로컬 타임존으로 파싱
+    const [year, month, day] = leaveDate.split('-');
+    const leave = startOfDay(new Date(year, month - 1, day));
     return leave >= today;
   };
 
@@ -37,7 +39,9 @@ export default function LeaveList({ leaves, onCancel }) {
   return (
     <div className="space-y-3 max-h-[600px] overflow-y-auto">
       {sortedLeaves.map((leave) => {
-        const leaveDate = new Date(leave.leave_date);
+        // YYYY-MM-DD 형식을 로컬 타임존으로 파싱
+        const [year, month, day] = leave.leave_date.split('-');
+        const leaveDate = new Date(year, month - 1, day);
         const isPast = isBefore(startOfDay(leaveDate), startOfDay(new Date()));
         const canCancel = canCancelLeave(leave.leave_date) && leave.status === 'APPROVED';
 

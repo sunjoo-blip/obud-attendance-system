@@ -10,8 +10,10 @@ export async function GET(req) {
     }
 
     const result = await query(
-      `SELECT 
-        lr.id, lr.user_id, lr.leave_date, lr.leave_type, lr.status,
+      `SELECT
+        lr.id, lr.user_id,
+        TO_CHAR(lr.leave_date, 'YYYY-MM-DD') as leave_date,
+        lr.leave_type, lr.status,
         lr.created_at, lr.cancelled_at,
         u.name as user_name, u.email as user_email
        FROM leave_requests lr

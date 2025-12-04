@@ -25,37 +25,59 @@ export async function addGoogleCalendarEvent({
 }) {
   try {
     const date = new Date(leaveDate);
-    const dateStr = date.toISOString().split("T")[0];
+    // 로컬 타임존 기준으로 날짜 문자열 생성 (UTC 변환 방지)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
-    let startTime, endTime;
+    let event;
 
     if (leaveType === "FULL") {
-      // 종일 이벤트
-      startTime = `${dateStr}T09:00:00+09:00`;
-      endTime = `${dateStr}T18:00:00+09:00`;
-    } else if (leaveType === "AM_HALF") {
-      // 오전 반차
-      startTime = `${dateStr}T09:00:00+09:00`;
-      endTime = `${dateStr}T13:30:00+09:00`;
-    } else {
-      // 오후 반차
-      startTime = `${dateStr}T13:30:00+09:00`;
-      endTime = `${dateStr}T18:00:00+09:00`;
-    }
+      // 종일 이벤트 (시간 없이 하루 종일)
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayStr = nextDay.toISOString().split("T")[0];
 
-    const event = {
-      summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
-      description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
-      start: {
-        dateTime: startTime,
-        timeZone: "Asia/Seoul",
-      },
-      end: {
-        dateTime: endTime,
-        timeZone: "Asia/Seoul",
-      },
-      colorId: leaveType === "FULL" ? "11" : "5", // 빨간색 : 노란색
-    };
+      event = {
+        summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
+        description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
+        start: {
+          date: dateStr,
+        },
+        end: {
+          date: nextDayStr,
+        },
+        colorId: "4", // Cherry Blossom (연한 핑크)
+      };
+    } else {
+      // 반차 이벤트 (시간 지정)
+      let startTime, endTime;
+
+      if (leaveType === "AM_HALF") {
+        // 오전 반차
+        startTime = `${dateStr}T09:00:00+09:00`;
+        endTime = `${dateStr}T13:30:00+09:00`;
+      } else {
+        // 오후 반차
+        startTime = `${dateStr}T13:30:00+09:00`;
+        endTime = `${dateStr}T18:00:00+09:00`;
+      }
+
+      event = {
+        summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
+        description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
+        start: {
+          dateTime: startTime,
+          timeZone: "Asia/Seoul",
+        },
+        end: {
+          dateTime: endTime,
+          timeZone: "Asia/Seoul",
+        },
+        colorId: "4",
+      };
+    }
 
     const response = await calendar.events.insert({
       calendarId: process.env.GOOGLE_CALENDAR_ID,
@@ -87,33 +109,55 @@ export async function updateGoogleCalendarEvent(
 ) {
   try {
     const date = new Date(leaveDate);
-    const dateStr = date.toISOString().split("T")[0];
+    // 로컬 타임존 기준으로 날짜 문자열 생성 (UTC 변환 방지)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
-    let startTime, endTime;
+    let event;
 
     if (leaveType === "FULL") {
-      startTime = `${dateStr}T09:00:00+09:00`;
-      endTime = `${dateStr}T18:00:00+09:00`;
-    } else if (leaveType === "AM_HALF") {
-      startTime = `${dateStr}T09:00:00+09:00`;
-      endTime = `${dateStr}T13:30:00+09:00`;
-    } else {
-      startTime = `${dateStr}T13:30:00+09:00`;
-      endTime = `${dateStr}T18:00:00+09:00`;
-    }
+      // 종일 이벤트 (시간 없이 하루 종일)
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayStr = nextDay.toISOString().split("T")[0];
 
-    const event = {
-      summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
-      description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
-      start: {
-        dateTime: startTime,
-        timeZone: "Asia/Seoul",
-      },
-      end: {
-        dateTime: endTime,
-        timeZone: "Asia/Seoul",
-      },
-    };
+      event = {
+        summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
+        description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
+        start: {
+          date: dateStr,
+        },
+        end: {
+          date: nextDayStr,
+        },
+      };
+    } else {
+      // 반차 이벤트 (시간 지정)
+      let startTime, endTime;
+
+      if (leaveType === "AM_HALF") {
+        startTime = `${dateStr}T09:00:00+09:00`;
+        endTime = `${dateStr}T13:30:00+09:00`;
+      } else {
+        startTime = `${dateStr}T13:30:00+09:00`;
+        endTime = `${dateStr}T18:00:00+09:00`;
+      }
+
+      event = {
+        summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
+        description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
+        start: {
+          dateTime: startTime,
+          timeZone: "Asia/Seoul",
+        },
+        end: {
+          dateTime: endTime,
+          timeZone: "Asia/Seoul",
+        },
+      };
+    }
 
     await calendar.events.update({
       calendarId: process.env.GOOGLE_CALENDAR_ID,
