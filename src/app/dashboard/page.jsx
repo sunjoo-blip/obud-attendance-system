@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import LeaveCalendar from '@/components/LeaveCalendar';
-import LeaveRequestModal from '@/components/LeaveRequestModal';
-import LeaveList from '@/components/LeaveList';
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import LeaveCalendar from "@/components/LeaveCalendar";
+import LeaveRequestModal from "@/components/LeaveRequestModal";
+import LeaveList from "@/components/LeaveList";
 
 export default function DashboardPage() {
   const { data: session, status, update } = useSession();
@@ -17,24 +17,24 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
+    if (status === "unauthenticated") {
+      router.push("/login");
     }
   }, [status, router]);
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === "authenticated") {
       fetchLeaves();
     }
   }, [status]);
 
   const fetchLeaves = async () => {
     try {
-      const res = await fetch('/api/leaves');
+      const res = await fetch("/api/leaves");
       const data = await res.json();
       setLeaves(data.leaves || []);
     } catch (error) {
-      console.error('Failed to fetch leaves:', error);
+      console.error("Failed to fetch leaves:", error);
     } finally {
       setLoading(false);
     }
@@ -51,28 +51,28 @@ export default function DashboardPage() {
   };
 
   const handleLeaveCancel = async (leaveId) => {
-    if (!confirm('연차를 취소하시겠습니까?')) return;
+    if (!confirm("연차를 취소하시겠습니까?")) return;
 
     try {
       const res = await fetch(`/api/leaves/${leaveId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (res.ok) {
-        alert('연차가 취소되었습니다.');
+        alert("연차가 취소되었습니다.");
         fetchLeaves();
         update();
       } else {
         const data = await res.json();
-        alert(data.error || '취소에 실패했습니다.');
+        alert(data.error || "취소에 실패했습니다.");
       }
     } catch (error) {
-      console.error('Failed to cancel leave:', error);
-      alert('취소 중 오류가 발생했습니다.');
+      console.error("Failed to cancel leave:", error);
+      alert("취소 중 오류가 발생했습니다.");
     }
   };
 
-  if (status === 'loading' || loading) {
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">로딩 중...</div>
@@ -92,11 +92,11 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold text-gray-900">
-                🏠 근태관리
+                🏠 Obud 근태관리
               </h1>
               {session.user.isAdmin && (
                 <button
-                  onClick={() => router.push('/admin')}
+                  onClick={() => router.push("/admin")}
                   className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                 >
                   👨‍💼 관리자
@@ -106,10 +106,15 @@ export default function DashboardPage() {
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <p className="text-sm text-gray-600">
-                  나의 연차: <span className="font-bold text-blue-600 text-lg">{session.user.remainingLeaves}개</span> 남음
+                  나의 연차:{" "}
+                  <span className="font-bold text-blue-600 text-lg">
+                    {session.user.remainingLeaves}개
+                  </span>{" "}
+                  남음
                 </p>
                 <p className="text-xs text-gray-500">
-                  (전체: {session.user.totalLeaves}개 / 사용: {session.user.usedLeaves}개)
+                  (전체: {session.user.totalLeaves}개 / 사용:{" "}
+                  {session.user.usedLeaves}개)
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -127,7 +132,7 @@ export default function DashboardPage() {
                     {session.user.name}
                   </p>
                   <button
-                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    onClick={() => signOut({ callbackUrl: "/login" })}
                     className="text-xs text-gray-600 hover:text-gray-900"
                   >
                     로그아웃
@@ -146,7 +151,9 @@ export default function DashboardPage() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">📅 연차 달력</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  📅 연차 달력
+                </h2>
                 <button
                   onClick={() => setShowModal(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -154,10 +161,7 @@ export default function DashboardPage() {
                   + 연차 신청
                 </button>
               </div>
-              <LeaveCalendar
-                leaves={leaves}
-                onSelectDate={handleDateSelect}
-              />
+              <LeaveCalendar leaves={leaves} onSelectDate={handleDateSelect} />
             </div>
           </div>
 
@@ -167,10 +171,7 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 📋 나의 연차 내역
               </h2>
-              <LeaveList
-                leaves={leaves}
-                onCancel={handleLeaveCancel}
-              />
+              <LeaveList leaves={leaves} onCancel={handleLeaveCancel} />
             </div>
           </div>
         </div>
