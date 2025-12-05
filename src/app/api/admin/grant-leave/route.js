@@ -15,13 +15,22 @@ export async function POST(req) {
       return Response.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+
     // 연차 지급
     await query(
-      `UPDATE leave_balance 
+      `UPDATE leave_balance
        SET total_leaves = total_leaves + $1,
            updated_at = CURRENT_TIMESTAMP
        WHERE user_id = $2`,
       [amount, userId]
+    );
+
+    // 수동 지급 이력 저장
+    await query(
+      `INSERT INTO monthly_leave_grants (user_id, grant_month, amount, grant_type)
+       VALUES ($1, $2, $3, 'MANUAL')`,
+      [userId, currentMonth, amount]
     );
 
     return Response.json({ success: true });

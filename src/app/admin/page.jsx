@@ -48,6 +48,33 @@ export default function AdminPage() {
     }
   };
 
+  const handleUpdateJoinDate = async (userId, currentJoinDate) => {
+    const newDate = prompt(
+      "입사일을 입력하세요 (YYYY-MM-DD):",
+      currentJoinDate || ""
+    );
+    if (newDate === null) return;
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, joinDate: newDate || null }),
+      });
+
+      if (res.ok) {
+        alert("입사일이 업데이트되었습니다.");
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || "입사일 업데이트에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Update join date error:", error);
+      alert("입사일 업데이트 중 오류가 발생했습니다.");
+    }
+  };
+
   const handleGrantLeave = async (userId) => {
     const amount = prompt("지급할 연차 개수를 입력하세요:", "1");
     if (!amount) return;
@@ -133,6 +160,7 @@ export default function AdminPage() {
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">사용자</th>
                   <th className="text-center py-3 px-4">이메일</th>
+                  <th className="text-center py-3 px-4">입사일</th>
                   <th className="text-center py-3 px-4">전체 연차</th>
                   <th className="text-center py-3 px-4">사용 연차</th>
                   <th className="text-center py-3 px-4">남은 연차</th>
@@ -158,6 +186,16 @@ export default function AdminPage() {
                     </td>
                     <td className="text-center py-3 px-4 text-sm text-gray-600">
                       {user.email}
+                    </td>
+                    <td className="text-center py-3 px-4">
+                      <button
+                        onClick={() =>
+                          handleUpdateJoinDate(user.id, user.join_date)
+                        }
+                        className="text-sm text-gray-600 hover:text-blue-600 underline"
+                      >
+                        {user.join_date || "미설정"}
+                      </button>
                     </td>
                     <td className="text-center py-3 px-4">
                       <span className="font-bold text-blue-600">
