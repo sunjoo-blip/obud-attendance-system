@@ -124,8 +124,15 @@ export async function POST(req) {
 
     // Google Calendar에 이벤트 추가
     try {
+      // DB에서 사용자 이름 조회
+      const userResult = await query(
+        `SELECT name FROM users WHERE id = $1`,
+        [session.user.id]
+      );
+      const userName = userResult.rows[0]?.name || session.user.name;
+
       const eventId = await addGoogleCalendarEvent({
-        userName: session.user.name,
+        userName,
         startDate,
         endDate,
         leaveType,
