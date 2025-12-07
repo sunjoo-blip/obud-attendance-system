@@ -78,13 +78,7 @@ export async function POST(req) {
       return Response.json({ error: 'Leave balance not found' }, { status: 404 });
     }
 
-    const balance = balanceResult.rows[0];
-    const totalLeaves = parseFloat(balance.total_leaves);
-    const usedLeaves = parseFloat(balance.used_leaves);
-
-    if (totalLeaves - usedLeaves < leaveAmount) {
-      return Response.json({ error: '연차가 부족합니다.' }, { status: 400 });
-    }
+    // 연차 당겨쓰기 가능하므로 잔액 체크 제거
 
     // 중복 신청 확인 (날짜 범위가 겹치는지 확인)
     const duplicateCheck = await query(
