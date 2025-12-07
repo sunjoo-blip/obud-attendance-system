@@ -11,9 +11,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [allLeaves, setAllLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7)
-  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -233,18 +232,6 @@ export default function AdminPage() {
             📋 전체 연차 내역
           </h2>
 
-          <div className="mb-4">
-            <label className="text-sm font-medium text-gray-700 mr-2">
-              월 선택:
-            </label>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -257,9 +244,21 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {allLeaves
-                  .filter((leave) => leave.start_date.startsWith(selectedMonth))
-                  .map((leave) => {
+                {(() => {
+                  // 날짜 내림차순 정렬
+                  const sortedLeaves = [...allLeaves].sort((a, b) => {
+                    return new Date(b.start_date) - new Date(a.start_date);
+                  });
+
+                  // 페이지네이션
+                  const totalPages = Math.ceil(sortedLeaves.length / itemsPerPage);
+                  const startIndex = (currentPage - 1) * itemsPerPage;
+                  const paginatedLeaves = sortedLeaves.slice(
+                    startIndex,
+                    startIndex + itemsPerPage
+                  );
+
+                  return paginatedLeaves.map((leave) => {
                     const dateDisplay =
                       leave.start_date === leave.end_date
                         ? leave.start_date
@@ -304,10 +303,41 @@ export default function AdminPage() {
                         </td>
                       </tr>
                     );
-                  })}
+                  });
+                })()}
               </tbody>
             </table>
           </div>
+
+          {/* 페이지네이션 */}
+          {(() => {
+            const totalPages = Math.ceil(allLeaves.length / itemsPerPage);
+            if (totalPages <= 1) return null;
+
+            return (
+              <div className="flex justify-center items-center gap-2 mt-4">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  이전
+                </button>
+                <span className="text-sm text-gray-600">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  다음
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </main>
     </div>
