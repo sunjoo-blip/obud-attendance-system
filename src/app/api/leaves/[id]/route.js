@@ -40,10 +40,17 @@ export async function DELETE(req, { params }) {
     }
 
     // 연차 사용량 계산
-    const start = new Date(leave.start_date);
-    const end = new Date(leave.end_date);
-    const daysDiff = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    const leaveAmount = leave.leave_type === 'FULL' ? daysDiff : 0.5;
+    let leaveAmount;
+    if (leave.leave_type === 'FULL') {
+      const start = new Date(leave.start_date);
+      const end = new Date(leave.end_date);
+      const daysDiff = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      leaveAmount = daysDiff;
+    } else if (leave.leave_type === 'QUARTER_DAY') {
+      leaveAmount = 0.25;
+    } else {
+      leaveAmount = 0.5; // AM_HALF, PM_HALF
+    }
 
     // 연차 취소
     await query(

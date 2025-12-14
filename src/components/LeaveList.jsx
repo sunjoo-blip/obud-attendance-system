@@ -7,12 +7,14 @@ const leaveTypeLabels = {
   FULL: '연차',
   AM_HALF: '오전 반차',
   PM_HALF: '오후 반차',
+  QUARTER_DAY: '반반차',
 };
 
 const leaveTypeBadges = {
   FULL: 'bg-red-100 text-red-800',
   AM_HALF: 'bg-yellow-100 text-yellow-800',
   PM_HALF: 'bg-green-100 text-green-800',
+  QUARTER_DAY: 'bg-cyan-100 text-cyan-800',
 };
 
 export default function LeaveList({ leaves, onCancel }) {
@@ -76,6 +78,11 @@ export default function LeaveList({ leaves, onCancel }) {
                   >
                     {leaveTypeLabels[leave.leave_type]}
                   </span>
+                  {leave.leave_type === 'QUARTER_DAY' && leave.start_time && leave.end_time && (
+                    <span className="text-xs text-gray-500">
+                      {leave.start_time.substring(0, 5)} - {leave.end_time.substring(0, 5)}
+                    </span>
+                  )}
                 </div>
 
                 {leave.status === 'CANCELLED' && (

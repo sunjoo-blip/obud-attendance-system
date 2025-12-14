@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import { format, differenceInDays } from 'date-fns';
+import { QUARTER_DAY_TIME_OPTIONS, calculateEndTime } from '@/lib/leaveCalculator';
 
 export default function LeaveRequestModal({ selectedDate, onDateChange, onClose, onSuccess }) {
   const [leaveType, setLeaveType] = useState('FULL');
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState(selectedDate || new Date());
   const [endDate, setEndDate] = useState(selectedDate || new Date());
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('11:00');
 
   const handleStartDateChange = (e) => {
     const newDate = new Date(e.target.value);
@@ -31,6 +34,8 @@ export default function LeaveRequestModal({ selectedDate, onDateChange, onClose,
     const days = differenceInDays(endDate, startDate) + 1;
     if (leaveType === 'FULL') {
       return days;
+    } else if (leaveType === 'QUARTER_DAY') {
+      return 0.25;
     } else {
       // 반차는 시작일만 적용 (하루만)
       return 0.5;
@@ -42,9 +47,10 @@ export default function LeaveRequestModal({ selectedDate, onDateChange, onClose,
     setLoading(true);
 
     try {
-      // 반차는 하루만 선택 가능하도록 검증
+      // 반차/반반차는 하루만 선택 가능하도록 검증
       if (leaveType !== 'FULL' && differenceInDays(endDate, startDate) > 0) {
-        alert('반차는 하루만 선택 가능합니다.');
+        const message = leaveType === 'QUARTER_DAY' ? '반반차는 하루만 선택 가능합니다.' : '반차는 하루만 선택 가능합니다.';
+        alert(message);
         setLoading(false);
         return;
       }
@@ -62,6 +68,7 @@ export default function LeaveRequestModal({ selectedDate, onDateChange, onClose,
           startDate: formattedStartDate,
           endDate: formattedEndDate,
           leaveType,
+          ...(leaveType === 'QUARTER_DAY' && { startTime, endTime }),
         }),
       });
 
@@ -171,8 +178,54 @@ export default function LeaveRequestModal({ selectedDate, onDateChange, onClose,
                   <div className="text-sm text-gray-500">13:30 - 18:00</div>
                 </div>
               </label>
+
+              <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="leaveType"
+                  value="QUARTER_DAY"
+                  checked={leaveType === 'QUARTER_DAY'}
+                  onChange={(e) => setLeaveType(e.target.value)}
+                  className="mr-3"
+                />
+                <div>
+                  <div className="font-medium">반반차</div>
+                  <div className="text-sm text-gray-500">2시간 단위</div>
+                </div>
+              </label>
             </div>
           </div>
+
+          {/* 반반차 선택 시 시간 선택 UI 표시 */}
+          {leaveType === 'QUARTER_DAY' && (
+            <div className="mb-4 p-4 bg-cyan-50 rounded-lg border border-cyan-200">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                시작 시간 (30분 단위)
+              </label>
+              <select
+                value={startTime}
+                onChange={(e) => {
+                  const newStartTime = e.target.value;
+                  setStartTime(newStartTime);
+                  // 자동으로 +2시간 계산
+                  const newEndTime = calculateEndTime(newStartTime);
+                  setEndTime(newEndTime);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              >
+                {QUARTER_DAY_TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>
+                    {time}
+                  </option>
+                ))}
+              </select>
+
+              <div className="mt-3 p-2 bg-white rounded border border-cyan-100">
+                <span className="text-sm text-gray-600">종료 시간: </span>
+                <span className="text-sm font-medium text-cyan-700">{endTime}</span>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <button

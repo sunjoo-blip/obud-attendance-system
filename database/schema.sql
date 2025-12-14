@@ -14,8 +14,8 @@ CREATE TABLE users (
 CREATE TABLE leave_balance (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  total_leaves DECIMAL(5,1) DEFAULT 0,
-  used_leaves DECIMAL(5,1) DEFAULT 0,
+  total_leaves DECIMAL(5,2) DEFAULT 0,
+  used_leaves DECIMAL(5,2) DEFAULT 0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id)
 );
@@ -26,9 +26,11 @@ CREATE TABLE leave_requests (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
-  leave_type VARCHAR(20) NOT NULL CHECK (leave_type IN ('FULL', 'AM_HALF', 'PM_HALF')),
+  leave_type VARCHAR(20) NOT NULL CHECK (leave_type IN ('FULL', 'AM_HALF', 'PM_HALF', 'QUARTER_DAY')),
   status VARCHAR(20) NOT NULL DEFAULT 'APPROVED' CHECK (status IN ('APPROVED', 'CANCELLED')),
   google_calendar_event_id VARCHAR(255),
+  start_time TIME,
+  end_time TIME,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   cancelled_at TIMESTAMP
 );
@@ -38,7 +40,7 @@ CREATE TABLE monthly_leave_grants (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   grant_month VARCHAR(7) NOT NULL, -- YYYY-MM
-  amount DECIMAL(5,1) DEFAULT 1,
+  amount DECIMAL(5,2) DEFAULT 1,
   grant_type VARCHAR(20) NOT NULL DEFAULT 'MONTHLY' CHECK (grant_type IN ('MONTHLY', 'ANNUAL', 'MANUAL')),
   years_of_service INTEGER, -- 근속 년수 (ANNUAL 타입일 때만 기록)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

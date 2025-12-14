@@ -21,12 +21,14 @@ const leaveTypeColors = {
   FULL: 'bg-red-500',
   AM_HALF: 'bg-yellow-500',
   PM_HALF: 'bg-green-500',
+  QUARTER_DAY: 'bg-cyan-500',
 };
 
 const leaveTypeLabels = {
   FULL: '연차',
   AM_HALF: '오전 반차',
   PM_HALF: '오후 반차',
+  QUARTER_DAY: '반반차',
 };
 
 export default function LeaveCalendar({ leaves, onSelectDate }) {
@@ -47,9 +49,15 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
         const calendarEndDate = new Date(endDate);
         calendarEndDate.setDate(calendarEndDate.getDate() + 1);
 
+        // 반반차인 경우 시간 정보 추가
+        let title = leaveTypeLabels[leave.leave_type];
+        if (leave.leave_type === 'QUARTER_DAY' && leave.start_time && leave.end_time) {
+          title = `${leaveTypeLabels[leave.leave_type]} (${leave.start_time.substring(0, 5)}-${leave.end_time.substring(0, 5)})`;
+        }
+
         return {
           id: leave.id,
-          title: leaveTypeLabels[leave.leave_type],
+          title: title,
           start: startDate,
           end: calendarEndDate,
           allDay: true,
@@ -118,6 +126,10 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-green-500 rounded"></div>
           <span>오후 반차</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-cyan-500 rounded"></div>
+          <span>반반차</span>
         </div>
       </div>
     </div>

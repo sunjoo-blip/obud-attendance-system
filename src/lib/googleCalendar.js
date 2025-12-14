@@ -16,6 +16,7 @@ const leaveTypeLabels = {
   FULL: "휴가",
   AM_HALF: "오전 반차",
   PM_HALF: "오후 반차",
+  QUARTER_DAY: "반반차",
 };
 
 export async function addGoogleCalendarEvent({
@@ -23,6 +24,8 @@ export async function addGoogleCalendarEvent({
   startDate,
   endDate,
   leaveType,
+  startTime,
+  endTime,
 }) {
   try {
     const start = new Date(startDate);
@@ -58,29 +61,47 @@ export async function addGoogleCalendarEvent({
         },
         colorId: "4", // Cherry Blossom (연한 핑크)
       };
+    } else if (leaveType === "QUARTER_DAY") {
+      // 반반차: 정확한 시간 사용
+      const startDateTime = `${startDateStr}T${startTime}:00+09:00`;
+      const endDateTime = `${startDateStr}T${endTime}:00+09:00`;
+
+      event = {
+        summary: `${userName} - ${leaveTypeLabels[leaveType]} (${startTime}-${endTime})`,
+        description: `${userName}님의 반반차`,
+        start: {
+          dateTime: startDateTime,
+          timeZone: "Asia/Seoul",
+        },
+        end: {
+          dateTime: endDateTime,
+          timeZone: "Asia/Seoul",
+        },
+        colorId: "4",
+      };
     } else {
       // 반차 이벤트 (시간 지정, 시작일만 사용)
-      let startTime, endTime;
+      let eventStartTime, eventEndTime;
 
       if (leaveType === "AM_HALF") {
         // 오전 반차
-        startTime = `${startDateStr}T09:00:00+09:00`;
-        endTime = `${startDateStr}T13:30:00+09:00`;
+        eventStartTime = `${startDateStr}T09:00:00+09:00`;
+        eventEndTime = `${startDateStr}T13:30:00+09:00`;
       } else {
         // 오후 반차
-        startTime = `${startDateStr}T13:30:00+09:00`;
-        endTime = `${startDateStr}T18:00:00+09:00`;
+        eventStartTime = `${startDateStr}T13:30:00+09:00`;
+        eventEndTime = `${startDateStr}T18:00:00+09:00`;
       }
 
       event = {
         summary: `${userName} - ${leaveTypeLabels[leaveType]}`,
         description: `${userName}님의 ${leaveTypeLabels[leaveType]}`,
         start: {
-          dateTime: startTime,
+          dateTime: eventStartTime,
           timeZone: "Asia/Seoul",
         },
         end: {
-          dateTime: endTime,
+          dateTime: eventEndTime,
           timeZone: "Asia/Seoul",
         },
         colorId: "4",
