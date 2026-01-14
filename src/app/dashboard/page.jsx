@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -168,6 +169,16 @@ export default function DashboardPage() {
                 </button>
               </div>
               <LeaveCalendar leaves={leaves} onSelectDate={handleDateSelect} />
+
+              {/* 연차 설명서 버튼 */}
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setShowGuide(true)}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  오붓 연차 사용 설명서
+                </button>
+              </div>
             </div>
           </div>
 
@@ -194,6 +205,57 @@ export default function DashboardPage() {
           }}
           onSuccess={handleLeaveCreated}
         />
+      )}
+
+      {/* 연차 설명서 모달 */}
+      {showGuide && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 relative">
+            <button
+              onClick={() => setShowGuide(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold"
+            >
+              X
+            </button>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              오붓 연차 시스템
+            </h3>
+            <ul className="space-y-3 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-0.5">•</span>
+                <span>
+                  <strong>연차는 당겨 사용하는 것이 가능합니다.</strong>
+                  <br />
+                  <span className="text-gray-500">
+                    (현재 연차 2개더라도 3개 사용 가능)
+                  </span>
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-0.5">•</span>
+                <span>
+                  <strong>입사 1년 미만:</strong> 입사일마다 연차 하나씩 생성
+                  <br />
+                  <span className="text-gray-500">
+                    (ex. 3/15 입사자는 매달 15일 연차 1개 발생!)
+                  </span>
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-0.5">•</span>
+                <span>
+                  <strong>입사 1년 이상:</strong> 일괄 15개 연차 지급
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500 mt-0.5">•</span>
+                <span>
+                  이후 <strong>2년마다 연차 1개 추가</strong>
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
       )}
     </div>
   );
