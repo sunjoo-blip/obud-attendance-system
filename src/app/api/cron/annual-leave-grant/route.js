@@ -1,7 +1,7 @@
 import { query } from '@/lib/db';
 
 // 입사일 기반 연차 자동 계산 및 지급
-// 매월 1일 자동 실행
+// 매일 자동 실행 - 입사일 기준으로 월차/연차 지급
 export async function GET(req) {
   try {
     // Cron 인증 (보안을 위해 secret key 확인)
@@ -13,6 +13,7 @@ export async function GET(req) {
     }
 
     const currentDate = new Date();
+    const currentDay = currentDate.getDate(); // 오늘 일자
     const currentMonth = currentDate.toISOString().slice(0, 7); // YYYY-MM
 
     // 통계 변수 초기화
@@ -26,10 +27,12 @@ export async function GET(req) {
       errors: []
     };
 
-    // 모든 사용자 조회
+    // 오늘이 입사 기념일인 사용자 조회 (입사일의 day가 오늘과 같은 사람)
     const usersResult = await query(
       `SELECT id, TO_CHAR(join_date, 'YYYY-MM-DD') as join_date
-       FROM users`
+       FROM users
+       WHERE EXTRACT(DAY FROM join_date) = $1`,
+      [currentDay]
     );
     const users = usersResult.rows;
 
@@ -47,13 +50,22 @@ export async function GET(req) {
         const joinDate = new Date(user.join_date);
         const yearsOfService = calculateYearsOfService(user.join_date, currentDate);
 
-        // 1년 미만 vs 1년 이상 분기
+        // 1년 미만: 월차 지급 (입사일 기준 매월)
+        // 1년 이상: 연차 재계산 (입사일 기준 매년)
         if (yearsOfService < 1) {
+          // 입사 당월은 제외 (입사일과 같은 달이면 스킵)
+          if (joinDate.getFullYear() === currentDate.getFullYear() &&
+              joinDate.getMonth() === currentDate.getMonth()) {
+            stats.skippedNotAnniversary++;
+            continue;
+          }
           // 월차 지급 로직
-          await grantMonthlyLeave(user.id, currentMonth, stats);
-          stats.granted++;
+          const wasGranted = await grantMonthlyLeave(user.id, currentMonth, stats);
+          if (wasGranted) {
+            stats.granted++;
+          }
         } else {
-          // 연차 재계산 로직 (기념일 월만)
+          // 연차 재계산 로직 (기념일에만)
           const wasGranted = await recalculateAnnualLeave(
             user.id,
             joinDate,
@@ -122,7 +134,7 @@ function calculateAnnualLeaves(yearsOfService) {
   return 15 + Math.floor((yearsOfService - 1) / 2);
 }
 
-// 1년 미만자 월차 지급
+// 1년 미만자 월차 지급 (입사일 기준 매월)
 async function grantMonthlyLeave(userId, currentMonth, stats) {
   // 중복 체크
   const checkResult = await query(
@@ -133,7 +145,7 @@ async function grantMonthlyLeave(userId, currentMonth, stats) {
 
   if (checkResult.rows.length > 0) {
     console.log(`User ${userId} already granted monthly leave for ${currentMonth}`);
-    return;
+    return false;
   }
 
   // leave_balance 업데이트 (없으면 생성)
@@ -156,6 +168,7 @@ async function grantMonthlyLeave(userId, currentMonth, stats) {
 
   stats.monthlyGrantsCount++;
   console.log(`Granted 1 monthly leave to user ${userId} for ${currentMonth}`);
+  return true;
 }
 
 // 1년 이상자 연차 재계산

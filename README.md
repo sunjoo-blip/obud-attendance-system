@@ -114,11 +114,13 @@ npm run dev
 
 ### Cloudtype에서 Cron 설정
 
-1. **매월 1일 00:00 - 월차 자동 지급**
+1. **매일 00:00 - 월차/연차 자동 지급 (입사일 기준)**
    ```
-   0 0 1 * * https://your-domain.com/api/cron/monthly-grant
+   0 0 * * * https://your-domain.com/api/cron/annual-leave-grant
    Authorization: Bearer your-cron-secret-key
    ```
+   - 입사 1년 미만: 입사일 기준 매월 해당일에 월차 1개 지급 (예: 4/15 입사 → 5/15, 6/15에 지급)
+   - 입사 1년 이상: 입사 기념일에 연차 재계산
 
 2. **매일 00:00 - Slack 상태 설정**
    ```
