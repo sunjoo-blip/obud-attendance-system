@@ -46,9 +46,28 @@ CREATE TABLE monthly_leave_grants (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 미사용 연차 정산 이력 테이블
+-- 입사 기념일마다 이전 기간의 미사용 연차를 일당 환산하여 정산 기록
+CREATE TABLE leave_settlements (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  settlement_date DATE NOT NULL,          -- 정산 기준일 (입사 기념일)
+  years_of_service INTEGER NOT NULL,      -- 해당 연도의 근속 년수
+  total_leaves DECIMAL(5,2) NOT NULL,     -- 해당 기간 지급된 총 연차
+  used_leaves DECIMAL(5,2) NOT NULL,      -- 해당 기간 사용한 연차
+  unused_leaves DECIMAL(5,2) NOT NULL,    -- 미사용 연차
+  daily_wage DECIMAL(10,2),              -- 일당 (입력 시 금액 계산 가능)
+  settlement_amount DECIMAL(12,2),       -- 정산 금액 (daily_wage * unused_leaves)
+  note TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, settlement_date)
+);
+
 -- 인덱스 추가
 CREATE INDEX idx_leave_requests_user_date ON leave_requests(user_id, start_date, end_date);
 CREATE INDEX idx_leave_requests_date ON leave_requests(start_date, end_date);
 CREATE INDEX idx_monthly_grants_month ON monthly_leave_grants(grant_month);
 CREATE INDEX idx_monthly_grants_type ON monthly_leave_grants(grant_type);
 CREATE INDEX idx_monthly_grants_user_type ON monthly_leave_grants(user_id, grant_type);
+CREATE INDEX idx_leave_settlements_user ON leave_settlements(user_id);
+CREATE INDEX idx_leave_settlements_date ON leave_settlements(settlement_date);
