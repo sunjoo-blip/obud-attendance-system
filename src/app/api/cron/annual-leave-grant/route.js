@@ -4,6 +4,12 @@ import { query } from "@/lib/db";
 // 매일 자동 실행 - 입사일 기준으로 월차/연차 지급
 export async function GET(req) {
   try {
+    const authHeader = req.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const currentDate = new Date();
     const currentDay = currentDate.getDate();
     const currentMonth = currentDate.toISOString().slice(0, 7); // YYYY-MM
