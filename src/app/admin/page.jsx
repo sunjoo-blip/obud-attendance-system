@@ -50,7 +50,7 @@ export default function AdminPage() {
   const handleUpdateJoinDate = async (userId, currentJoinDate) => {
     const newDate = prompt(
       "입사일을 입력하세요 (YYYY-MM-DD):",
-      currentJoinDate || ""
+      currentJoinDate || "",
     );
     if (newDate === null) return;
 
@@ -251,11 +251,13 @@ export default function AdminPage() {
                   });
 
                   // 페이지네이션
-                  const totalPages = Math.ceil(sortedLeaves.length / itemsPerPage);
+                  const totalPages = Math.ceil(
+                    sortedLeaves.length / itemsPerPage,
+                  );
                   const startIndex = (currentPage - 1) * itemsPerPage;
                   const paginatedLeaves = sortedLeaves.slice(
                     startIndex,
-                    startIndex + itemsPerPage
+                    startIndex + itemsPerPage,
                   );
 
                   return paginatedLeaves.map((leave) => {
@@ -273,15 +275,19 @@ export default function AdminPage() {
                               leave.leave_type === "FULL"
                                 ? "bg-red-100 text-red-800"
                                 : leave.leave_type === "AM_HALF"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-green-100 text-green-800"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : leave.leave_type === "PM_HALF"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-purple-100 text-purple-800"
                             }`}
                           >
                             {leave.leave_type === "FULL"
                               ? "연차"
                               : leave.leave_type === "AM_HALF"
-                              ? "오전 반차"
-                              : "오후 반차"}
+                                ? "오전 반차"
+                                : leave.leave_type === "PM_HALF"
+                                  ? "오후 반차"
+                                  : `반반차 ${leave.start_time?.slice(0, 5)}~${leave.end_time?.slice(0, 5)}`}
                           </span>
                         </td>
                         <td className="text-center py-3 px-4">
@@ -317,7 +323,9 @@ export default function AdminPage() {
             return (
               <div className="flex justify-center items-center gap-2 mt-4">
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
