@@ -35,17 +35,19 @@ function CustomEvent({ event }) {
 
   return (
     <div
-      className="flex items-center gap-1 px-1 truncate"
+      className="flex flex-col px-1"
       title={isQuarter ? `반반차 (${timeStr})` : config.label}
     >
-      <span
-        className="flex-shrink-0 w-2 h-2 rounded-full"
-        style={{ backgroundColor: config.dot }}
-      />
-      <span className="truncate text-xs text-gray-800">
-        {config.label}
-        {isQuarter && <span className="text-gray-500"> {timeStr}</span>}
-      </span>
+      <div className="flex items-center gap-1 truncate">
+        <span
+          className="flex-shrink-0 w-2 h-2 rounded-full"
+          style={{ backgroundColor: config.dot }}
+        />
+        <span className="truncate text-xs text-gray-800">{config.label}</span>
+      </div>
+      {isQuarter && (
+        <span className="text-[10px] text-gray-400 pl-3 leading-tight">{timeStr}</span>
+      )}
     </div>
   );
 }

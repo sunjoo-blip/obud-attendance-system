@@ -16,7 +16,7 @@ export async function GET(req) {
       `SELECT id, user_id,
               TO_CHAR(start_date, 'YYYY-MM-DD') as start_date,
               TO_CHAR(end_date, 'YYYY-MM-DD') as end_date,
-              leave_type, status, google_calendar_event_id,
+              leave_type, start_time, end_time, status, google_calendar_event_id,
               created_at, cancelled_at
        FROM leave_requests
        WHERE user_id = $1
