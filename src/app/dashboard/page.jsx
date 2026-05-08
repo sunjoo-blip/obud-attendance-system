@@ -46,7 +46,7 @@ export default function DashboardPage() {
     const normalizedDate = new Date(
       date.getFullYear(),
       date.getMonth(),
-      date.getDate()
+      date.getDate(),
     );
     setSelectedDate(normalizedDate);
     setShowModal(true);
