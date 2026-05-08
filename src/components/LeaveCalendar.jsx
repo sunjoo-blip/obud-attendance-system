@@ -31,6 +31,30 @@ const leaveTypeLabels = {
   QUARTER_DAY: '반반차',
 };
 
+function CustomToolbar({ date, onNavigate }) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  return (
+    <div className="flex items-center justify-center gap-3 mb-4">
+      <button
+        onClick={() => onNavigate('PREV')}
+        className="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 text-lg leading-none"
+      >
+        ‹
+      </button>
+      <span className="text-base font-semibold text-gray-800 min-w-[6rem] text-center">
+        {year}년 {month}월
+      </span>
+      <button
+        onClick={() => onNavigate('NEXT')}
+        className="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 text-lg leading-none"
+      >
+        ›
+      </button>
+    </div>
+  );
+}
+
 export default function LeaveCalendar({ leaves, onSelectDate }) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -111,6 +135,7 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
         }}
         views={['month']}
         defaultView="month"
+        components={{ toolbar: CustomToolbar }}
       />
       
       {/* 범례 */}
