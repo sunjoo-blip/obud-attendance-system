@@ -381,7 +381,7 @@ export default function AdminPage() {
 
               // 날짜별 연차 맵
               const dayMap = {};
-              filtered.forEach((l) => {
+              filtered.filter((l) => l.status === "APPROVED").forEach((l) => {
                 const start = new Date(l.start_date);
                 const end = new Date(l.end_date);
                 for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -426,15 +426,51 @@ export default function AdminPage() {
                                   {day}
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                  {leaves.map((l) => (
-                                    <div
-                                      key={l.id}
-                                      className={`text-xs px-1 py-0.5 rounded truncate ${leaveTypeBadge(l)}`}
-                                      title={`${l.user_name} · ${leaveTypeLabel(l)}`}
-                                    >
-                                      {l.user_name}
-                                    </div>
-                                  ))}
+                                  {leaves.map((l) => {
+                                    if (l.leave_type === "FULL") {
+                                      return (
+                                        <div
+                                          key={l.id}
+                                          className="text-xs px-1.5 py-0.5 rounded bg-red-300 text-white truncate"
+                                          title={`${l.user_name} · 연차`}
+                                        >
+                                          {l.user_name} - 휴가
+                                        </div>
+                                      );
+                                    }
+                                    const timeLabel = l.leave_type === "AM_HALF"
+                                      ? "오전 반차"
+                                      : l.leave_type === "PM_HALF"
+                                        ? "오후 반차"
+                                        : `반반차 (${l.start_time?.slice(0, 5)}-${l.end_time?.slice(0, 5)})`;
+                                    const dotColor = l.leave_type === "AM_HALF"
+                                      ? "text-yellow-500"
+                                      : l.leave_type === "PM_HALF"
+                                        ? "text-green-500"
+                                        : "text-purple-500";
+                                    const startHour = l.leave_type === "AM_HALF"
+                                      ? "9:00am"
+                                      : l.leave_type === "PM_HALF"
+                                        ? "1:30pm"
+                                        : (() => {
+                                            const [h, m] = (l.start_time || "").split(":").map(Number);
+                                            const ampm = h < 12 ? "am" : "pm";
+                                            const h12 = h % 12 || 12;
+                                            return `${h12}${m ? `:${String(m).padStart(2, "0")}` : ""}${ampm}`;
+                                          })();
+                                    return (
+                                      <div
+                                        key={l.id}
+                                        className="text-xs flex items-center gap-0.5 truncate"
+                                        title={`${l.user_name} · ${timeLabel}`}
+                                      >
+                                        <span className={`${dotColor} flex-shrink-0`}>●</span>
+                                        <span className="text-gray-600 truncate">
+                                          {startHour} {l.user_name} - {timeLabel}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </>
                             )}
