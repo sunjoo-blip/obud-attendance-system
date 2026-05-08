@@ -28,6 +28,10 @@ export default function AdminPage() {
   const [allLeaves, setAllLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [leaveView, setLeaveView] = useState("table"); // "table" | "calendar"
+  const [filterUser, setFilterUser] = useState(""); // user id or ""
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [openMenuId, setOpenMenuId] = useState(null);
   const [openMenuPos, setOpenMenuPos] = useState({ top: 0, right: 0 });
   const [settlementModal, setSettlementModal] = useState(null); // { user, settlements }
@@ -290,122 +294,239 @@ export default function AdminPage() {
 
         {/* 전체 연차 내역 */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            📋 전체 연차 내역
-          </h2>
+          {/* 헤더 행: 제목 + 필터 + 뷰 토글 */}
+          <div className="flex flex-wrap items-center gap-3 mb-5">
+            <h2 className="text-xl font-bold text-gray-900 mr-auto">📋 전체 연차 내역</h2>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4">날짜</th>
-                  <th className="text-left py-3 px-4">사용자</th>
-                  <th className="text-center py-3 px-4">종류</th>
-                  <th className="text-center py-3 px-4">상태</th>
-                  <th className="text-center py-3 px-4">작업</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  // 날짜 내림차순 정렬
-                  const sortedLeaves = [...allLeaves].sort((a, b) => {
-                    return new Date(b.start_date) - new Date(a.start_date);
-                  });
+            {/* 직원 필터 */}
+            <select
+              value={filterUser}
+              onChange={(e) => { setFilterUser(e.target.value); setCurrentPage(1); }}
+              className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
+            >
+              <option value="">전체 직원</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
 
-                  // 페이지네이션
-                  const totalPages = Math.ceil(
-                    sortedLeaves.length / itemsPerPage,
-                  );
-                  const startIndex = (currentPage - 1) * itemsPerPage;
-                  const paginatedLeaves = sortedLeaves.slice(
-                    startIndex,
-                    startIndex + itemsPerPage,
-                  );
+            {/* 연도 */}
+            <select
+              value={filterYear}
+              onChange={(e) => { setFilterYear(Number(e.target.value)); setCurrentPage(1); }}
+              className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                <option key={y} value={y}>{y}년</option>
+              ))}
+            </select>
 
-                  return paginatedLeaves.map((leave) => {
-                    const dateDisplay =
-                      leave.start_date === leave.end_date
-                        ? leave.start_date
-                        : `${leave.start_date} ~ ${leave.end_date}`;
-                    return (
-                      <tr key={leave.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4">{dateDisplay}</td>
-                        <td className="py-3 px-4">{leave.user_name}</td>
-                        <td className="text-center py-3 px-4">
-                          <span
-                            className={`px-2 py-1 text-xs rounded ${
-                              leave.leave_type === "FULL"
-                                ? "bg-red-100 text-red-800"
-                                : leave.leave_type === "AM_HALF"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : leave.leave_type === "PM_HALF"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-purple-100 text-purple-800"
-                            }`}
-                          >
-                            {leave.leave_type === "FULL"
-                              ? "연차"
-                              : leave.leave_type === "AM_HALF"
-                                ? "오전 반차"
-                                : leave.leave_type === "PM_HALF"
-                                  ? "오후 반차"
-                                  : `반반차 ${leave.start_time?.slice(0, 5)}~${leave.end_time?.slice(0, 5)}`}
-                          </span>
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {leave.status === "APPROVED" ? (
-                            <span className="text-green-600">승인</span>
-                          ) : (
-                            <span className="text-gray-500">취소</span>
-                          )}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          {leave.status === "APPROVED" && (
-                            <button
-                              onClick={() => handleDeleteLeave(leave.id)}
-                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
-                            >
-                              삭제
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
-              </tbody>
-            </table>
+            {/* 월 */}
+            <select
+              value={filterMonth}
+              onChange={(e) => { setFilterMonth(Number(e.target.value)); setCurrentPage(1); }}
+              className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
+            >
+              <option value={0}>전체 월</option>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <option key={m} value={m}>{m}월</option>
+              ))}
+            </select>
+
+            {/* 뷰 토글 */}
+            <div className="flex border border-gray-300 rounded overflow-hidden text-sm">
+              <button
+                onClick={() => setLeaveView("table")}
+                className={`px-3 py-1.5 ${leaveView === "table" ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+              >
+                표
+              </button>
+              <button
+                onClick={() => setLeaveView("calendar")}
+                className={`px-3 py-1.5 border-l border-gray-300 ${leaveView === "calendar" ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+              >
+                달력
+              </button>
+            </div>
           </div>
 
-          {/* 페이지네이션 */}
           {(() => {
-            const totalPages = Math.ceil(allLeaves.length / itemsPerPage);
-            if (totalPages <= 1) return null;
+            // 필터 적용
+            const filtered = allLeaves.filter((l) => {
+              if (filterUser && String(l.user_id) !== String(filterUser)) return false;
+              const d = new Date(l.start_date);
+              if (d.getFullYear() !== filterYear) return false;
+              if (filterMonth !== 0 && d.getMonth() + 1 !== filterMonth) return false;
+              return true;
+            });
+
+            const leaveTypeLabel = (leave) => {
+              if (leave.leave_type === "FULL") return "연차";
+              if (leave.leave_type === "AM_HALF") return "오전 반차";
+              if (leave.leave_type === "PM_HALF") return "오후 반차";
+              return `반반차 ${leave.start_time?.slice(0, 5)}~${leave.end_time?.slice(0, 5)}`;
+            };
+            const leaveTypeBadge = (leave) => {
+              if (leave.leave_type === "FULL") return "bg-red-100 text-red-800";
+              if (leave.leave_type === "AM_HALF") return "bg-yellow-100 text-yellow-800";
+              if (leave.leave_type === "PM_HALF") return "bg-green-100 text-green-800";
+              return "bg-purple-100 text-purple-800";
+            };
+
+            if (leaveView === "calendar") {
+              // 달력 뷰: filterMonth가 0이면 현재 월로 고정
+              const calMonth = filterMonth === 0 ? new Date().getMonth() + 1 : filterMonth;
+              const firstDay = new Date(filterYear, calMonth - 1, 1).getDay(); // 0=일
+              const daysInMonth = new Date(filterYear, calMonth, 0).getDate();
+
+              // 날짜별 연차 맵
+              const dayMap = {};
+              filtered.forEach((l) => {
+                const start = new Date(l.start_date);
+                const end = new Date(l.end_date);
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                  if (d.getFullYear() === filterYear && d.getMonth() + 1 === calMonth) {
+                    const key = d.getDate();
+                    if (!dayMap[key]) dayMap[key] = [];
+                    dayMap[key].push(l);
+                  }
+                }
+              });
+
+              const cells = [];
+              for (let i = 0; i < firstDay; i++) cells.push(null);
+              for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+              const weeks = [];
+              for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+
+              return (
+                <div>
+                  <div className="grid grid-cols-7 mb-1">
+                    {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
+                      <div key={d} className="text-center text-xs font-medium text-gray-500 py-1">{d}</div>
+                    ))}
+                  </div>
+                  {weeks.map((week, wi) => (
+                    <div key={wi} className="grid grid-cols-7 border-t">
+                      {week.map((day, di) => {
+                        const leaves = day ? (dayMap[day] || []) : [];
+                        const isToday =
+                          day &&
+                          new Date().getFullYear() === filterYear &&
+                          new Date().getMonth() + 1 === calMonth &&
+                          new Date().getDate() === day;
+                        return (
+                          <div
+                            key={di}
+                            className={`min-h-[80px] border-r last:border-r-0 p-1 ${!day ? "bg-gray-50" : ""}`}
+                          >
+                            {day && (
+                              <>
+                                <div className={`text-xs font-medium mb-1 w-5 h-5 flex items-center justify-center rounded-full ${isToday ? "bg-gray-900 text-white" : di === 0 ? "text-red-500" : di === 6 ? "text-blue-500" : "text-gray-700"}`}>
+                                  {day}
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                  {leaves.map((l) => (
+                                    <div
+                                      key={l.id}
+                                      className={`text-xs px-1 py-0.5 rounded truncate ${leaveTypeBadge(l)}`}
+                                      title={`${l.user_name} · ${leaveTypeLabel(l)}`}
+                                    >
+                                      {l.user_name}
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                  {filtered.length === 0 && (
+                    <p className="text-center text-gray-400 text-sm py-6">해당 기간에 연차 내역이 없습니다.</p>
+                  )}
+                </div>
+              );
+            }
+
+            // 표 뷰
+            const sorted = [...filtered].sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+            const totalPages = Math.ceil(sorted.length / itemsPerPage);
+            const paginated = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
             return (
-              <div className="flex justify-center items-center gap-2 mt-4">
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(1, prev - 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  이전
-                </button>
-                <span className="text-sm text-gray-600">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  다음
-                </button>
-              </div>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4">날짜</th>
+                        <th className="text-left py-3 px-4">사용자</th>
+                        <th className="text-center py-3 px-4">종류</th>
+                        <th className="text-center py-3 px-4">상태</th>
+                        <th className="text-center py-3 px-4">작업</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginated.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="text-center py-8 text-gray-400">해당 조건의 연차 내역이 없습니다.</td>
+                        </tr>
+                      ) : paginated.map((leave) => {
+                        const dateDisplay = leave.start_date === leave.end_date
+                          ? leave.start_date
+                          : `${leave.start_date} ~ ${leave.end_date}`;
+                        return (
+                          <tr key={leave.id} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4">{dateDisplay}</td>
+                            <td className="py-3 px-4">{leave.user_name}</td>
+                            <td className="text-center py-3 px-4">
+                              <span className={`px-2 py-1 text-xs rounded ${leaveTypeBadge(leave)}`}>
+                                {leaveTypeLabel(leave)}
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-4">
+                              {leave.status === "APPROVED"
+                                ? <span className="text-green-600">승인</span>
+                                : <span className="text-gray-500">취소</span>}
+                            </td>
+                            <td className="text-center py-3 px-4">
+                              {leave.status === "APPROVED" && (
+                                <button
+                                  onClick={() => handleDeleteLeave(leave.id)}
+                                  className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
+                                >
+                                  삭제
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      이전
+                    </button>
+                    <span className="text-sm text-gray-600">{currentPage} / {totalPages}</span>
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    >
+                      다음
+                    </button>
+                  </div>
+                )}
+              </>
             );
           })()}
         </div>
