@@ -29,6 +29,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [openMenuPos, setOpenMenuPos] = useState({ top: 0, right: 0 });
   const [settlementModal, setSettlementModal] = useState(null); // { user, settlements }
   const [settlementLoading, setSettlementLoading] = useState(false);
   const menuRef = useRef(null);
@@ -260,63 +261,25 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="text-center py-3 px-4">
-                      <div
-                        className="relative inline-block"
+                      <button
                         ref={openMenuId === user.id ? menuRef : null}
-                      >
-                        <button
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === user.id ? null : user.id,
-                            )
+                        onClick={(e) => {
+                          if (openMenuId === user.id) {
+                            setOpenMenuId(null);
+                            return;
                           }
-                          className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-1"
-                        >
-                          작업
-                          <span className="text-xs">▾</span>
-                        </button>
-                        {openMenuId === user.id && (
-                          <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded shadow-lg z-10">
-                            <button
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                handleUpdateJoinDate(user.id, user.join_date);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                            >
-                              입사일 설정
-                            </button>
-                            <button
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                handleGrantLeave(user.id);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                            >
-                              연차 지급
-                            </button>
-                            {user.join_date && (() => {
-                              const join = new Date(user.join_date);
-                              const now = new Date();
-                              const years = now.getFullYear() - join.getFullYear() - (
-                                now.getMonth() < join.getMonth() ||
-                                (now.getMonth() === join.getMonth() && now.getDate() < join.getDate()) ? 1 : 0
-                              );
-                              return years >= 1;
-                            })() && (
-                              <button
-                                onClick={() => {
-                                  setOpenMenuId(null);
-                                  handleShowSettlements(user);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
-                              >
-                                정산 내역
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setOpenMenuPos({
+                            top: rect.bottom + 4,
+                            right: window.innerWidth - rect.right,
+                          });
+                          setOpenMenuId(user.id);
+                        }}
+                        className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-1 mx-auto"
+                      >
+                        작업
+                        <span className="text-xs">▾</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -448,6 +411,49 @@ export default function AdminPage() {
         </div>
       </main>
 
+      {/* 작업 드롭다운 (fixed) */}
+      {openMenuId && (() => {
+        const user = users.find((u) => u.id === openMenuId);
+        if (!user) return null;
+        const hasSettlement = user.join_date && (() => {
+          const join = new Date(user.join_date);
+          const now = new Date();
+          const years = now.getFullYear() - join.getFullYear() - (
+            now.getMonth() < join.getMonth() ||
+            (now.getMonth() === join.getMonth() && now.getDate() < join.getDate()) ? 1 : 0
+          );
+          return years >= 1;
+        })();
+        return (
+          <div
+            ref={menuRef}
+            style={{ top: openMenuPos.top, right: openMenuPos.right }}
+            className="fixed w-40 bg-white border border-gray-200 rounded shadow-lg z-50"
+          >
+            <button
+              onClick={() => { setOpenMenuId(null); handleUpdateJoinDate(user.id, user.join_date); }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              입사일 설정
+            </button>
+            <button
+              onClick={() => { setOpenMenuId(null); handleGrantLeave(user.id); }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              연차 지급
+            </button>
+            {hasSettlement && (
+              <button
+                onClick={() => { setOpenMenuId(null); handleShowSettlements(user); }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+              >
+                정산 내역
+              </button>
+            )}
+          </div>
+        );
+      })()}
+
       {/* 정산 내역 모달 */}
       {settlementModal && (
         <div
@@ -471,9 +477,13 @@ export default function AdminPage() {
             </div>
             <div className="p-6">
               {settlementLoading ? (
-                <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+                <div className="text-center py-8 text-gray-500">
+                  불러오는 중...
+                </div>
               ) : settlementModal.settlements.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">정산 내역이 없습니다.</div>
+                <div className="text-center py-8 text-gray-400">
+                  정산 내역이 없습니다.
+                </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
@@ -489,19 +499,35 @@ export default function AdminPage() {
                   <tbody>
                     {settlementModal.settlements.map((s) => (
                       <tr key={s.id} className="border-b hover:bg-gray-50">
-                        <td className="py-2 px-3 text-gray-700">{s.settlement_date}</td>
-                        <td className="text-center py-2 px-3">{s.years_of_service}년차</td>
-                        <td className="text-center py-2 px-3 font-medium text-blue-600">{s.total_leaves}개</td>
-                        <td className="text-center py-2 px-3 text-gray-600">{s.used_leaves}개</td>
+                        <td className="py-2 px-3 text-gray-700">
+                          {s.settlement_date}
+                        </td>
                         <td className="text-center py-2 px-3">
-                          <span className={s.unused_leaves > 0 ? "font-medium text-orange-600" : "text-gray-400"}>
+                          {s.years_of_service}년차
+                        </td>
+                        <td className="text-center py-2 px-3 font-medium text-blue-600">
+                          {s.total_leaves}개
+                        </td>
+                        <td className="text-center py-2 px-3 text-gray-600">
+                          {s.used_leaves}개
+                        </td>
+                        <td className="text-center py-2 px-3">
+                          <span
+                            className={
+                              s.unused_leaves > 0
+                                ? "font-medium text-orange-600"
+                                : "text-gray-400"
+                            }
+                          >
                             {s.unused_leaves}개
                           </span>
                         </td>
                         <td className="text-center py-2 px-3">
-                          {s.settlement_amount != null
-                            ? `${Number(s.settlement_amount).toLocaleString()}원`
-                            : <span className="text-gray-400">-</span>}
+                          {s.settlement_amount != null ? (
+                            `${Number(s.settlement_amount).toLocaleString()}원`
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                       </tr>
                     ))}
