@@ -296,40 +296,60 @@ export default function AdminPage() {
         <div className="bg-white rounded-lg shadow p-6">
           {/* 헤더 행: 제목 + 필터 + 뷰 토글 */}
           <div className="flex flex-wrap items-center gap-3 mb-5">
-            <h2 className="text-xl font-bold text-gray-900 mr-auto">📋 전체 연차 내역</h2>
+            <h2 className="text-xl font-bold text-gray-900 mr-auto">
+              📋 전체 연차 내역
+            </h2>
 
             {/* 직원 필터 */}
             <select
               value={filterUser}
-              onChange={(e) => { setFilterUser(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setFilterUser(e.target.value);
+                setCurrentPage(1);
+              }}
               className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
             >
               <option value="">전체 직원</option>
               {users.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
               ))}
             </select>
 
             {/* 연도 */}
             <select
               value={filterYear}
-              onChange={(e) => { setFilterYear(Number(e.target.value)); setCurrentPage(1); }}
+              onChange={(e) => {
+                setFilterYear(Number(e.target.value));
+                setCurrentPage(1);
+              }}
               className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
             >
-              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-                <option key={y} value={y}>{y}년</option>
+              {Array.from(
+                { length: 5 },
+                (_, i) => new Date().getFullYear() - i,
+              ).map((y) => (
+                <option key={y} value={y}>
+                  {y}년
+                </option>
               ))}
             </select>
 
             {/* 월 */}
             <select
               value={filterMonth}
-              onChange={(e) => { setFilterMonth(Number(e.target.value)); setCurrentPage(1); }}
+              onChange={(e) => {
+                setFilterMonth(Number(e.target.value));
+                setCurrentPage(1);
+              }}
               className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
             >
-              <option value={0}>전체 월</option>
+              {leaveView === "table" && <option value={0}>전체</option>}
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                <option key={m} value={m}>{m}월</option>
+                <option key={m} value={m}>
+                  {m}월
+                </option>
               ))}
             </select>
 
@@ -342,7 +362,11 @@ export default function AdminPage() {
                 표
               </button>
               <button
-                onClick={() => setLeaveView("calendar")}
+                onClick={() => {
+                  if (filterMonth === 0)
+                    setFilterMonth(new Date().getMonth() + 1);
+                  setLeaveView("calendar");
+                }}
                 className={`px-3 py-1.5 border-l border-gray-300 ${leaveView === "calendar" ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"}`}
               >
                 달력
@@ -353,10 +377,12 @@ export default function AdminPage() {
           {(() => {
             // 필터 적용
             const filtered = allLeaves.filter((l) => {
-              if (filterUser && String(l.user_id) !== String(filterUser)) return false;
+              if (filterUser && String(l.user_id) !== String(filterUser))
+                return false;
               const d = new Date(l.start_date);
               if (d.getFullYear() !== filterYear) return false;
-              if (filterMonth !== 0 && d.getMonth() + 1 !== filterMonth) return false;
+              if (filterMonth !== 0 && d.getMonth() + 1 !== filterMonth)
+                return false;
               return true;
             });
 
@@ -368,48 +394,64 @@ export default function AdminPage() {
             };
             const leaveTypeBadge = (leave) => {
               if (leave.leave_type === "FULL") return "bg-red-100 text-red-800";
-              if (leave.leave_type === "AM_HALF") return "bg-yellow-100 text-yellow-800";
-              if (leave.leave_type === "PM_HALF") return "bg-green-100 text-green-800";
+              if (leave.leave_type === "AM_HALF")
+                return "bg-yellow-100 text-yellow-800";
+              if (leave.leave_type === "PM_HALF")
+                return "bg-green-100 text-green-800";
               return "bg-purple-100 text-purple-800";
             };
 
             if (leaveView === "calendar") {
-              // 달력 뷰: filterMonth가 0이면 현재 월로 고정
-              const calMonth = filterMonth === 0 ? new Date().getMonth() + 1 : filterMonth;
+              const calMonth = filterMonth;
               const firstDay = new Date(filterYear, calMonth - 1, 1).getDay(); // 0=일
               const daysInMonth = new Date(filterYear, calMonth, 0).getDate();
 
               // 날짜별 연차 맵
               const dayMap = {};
-              filtered.filter((l) => l.status === "APPROVED").forEach((l) => {
-                const start = new Date(l.start_date);
-                const end = new Date(l.end_date);
-                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                  if (d.getFullYear() === filterYear && d.getMonth() + 1 === calMonth) {
-                    const key = d.getDate();
-                    if (!dayMap[key]) dayMap[key] = [];
-                    dayMap[key].push(l);
+              filtered
+                .filter((l) => l.status === "APPROVED")
+                .forEach((l) => {
+                  const start = new Date(l.start_date);
+                  const end = new Date(l.end_date);
+                  for (
+                    let d = new Date(start);
+                    d <= end;
+                    d.setDate(d.getDate() + 1)
+                  ) {
+                    if (
+                      d.getFullYear() === filterYear &&
+                      d.getMonth() + 1 === calMonth
+                    ) {
+                      const key = d.getDate();
+                      if (!dayMap[key]) dayMap[key] = [];
+                      dayMap[key].push(l);
+                    }
                   }
-                }
-              });
+                });
 
               const cells = [];
               for (let i = 0; i < firstDay; i++) cells.push(null);
               for (let d = 1; d <= daysInMonth; d++) cells.push(d);
               const weeks = [];
-              for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+              for (let i = 0; i < cells.length; i += 7)
+                weeks.push(cells.slice(i, i + 7));
 
               return (
                 <div>
                   <div className="grid grid-cols-7 mb-1">
                     {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
-                      <div key={d} className="text-center text-xs font-medium text-gray-500 py-1">{d}</div>
+                      <div
+                        key={d}
+                        className="text-center text-xs font-medium text-gray-500 py-1"
+                      >
+                        {d}
+                      </div>
                     ))}
                   </div>
                   {weeks.map((week, wi) => (
                     <div key={wi} className="grid grid-cols-7 border-t">
                       {week.map((day, di) => {
-                        const leaves = day ? (dayMap[day] || []) : [];
+                        const leaves = day ? dayMap[day] || [] : [];
                         const isToday =
                           day &&
                           new Date().getFullYear() === filterYear &&
@@ -422,7 +464,9 @@ export default function AdminPage() {
                           >
                             {day && (
                               <>
-                                <div className={`text-xs font-medium mb-1 w-5 h-5 flex items-center justify-center rounded-full ${isToday ? "bg-gray-900 text-white" : di === 0 ? "text-red-500" : di === 6 ? "text-blue-500" : "text-gray-700"}`}>
+                                <div
+                                  className={`text-xs font-medium mb-1 w-5 h-5 flex items-center justify-center rounded-full ${isToday ? "bg-gray-900 text-white" : di === 0 ? "text-red-500" : di === 6 ? "text-blue-500" : "text-gray-700"}`}
+                                >
                                   {day}
                                 </div>
                                 <div className="flex flex-col gap-0.5">
@@ -438,35 +482,47 @@ export default function AdminPage() {
                                         </div>
                                       );
                                     }
-                                    const timeLabel = l.leave_type === "AM_HALF"
-                                      ? "오전 반차"
-                                      : l.leave_type === "PM_HALF"
-                                        ? "오후 반차"
-                                        : `반반차 (${l.start_time?.slice(0, 5)}-${l.end_time?.slice(0, 5)})`;
-                                    const dotColor = l.leave_type === "AM_HALF"
-                                      ? "text-yellow-500"
-                                      : l.leave_type === "PM_HALF"
-                                        ? "text-green-500"
-                                        : "text-purple-500";
-                                    const startHour = l.leave_type === "AM_HALF"
-                                      ? "9:00am"
-                                      : l.leave_type === "PM_HALF"
-                                        ? "1:30pm"
-                                        : (() => {
-                                            const [h, m] = (l.start_time || "").split(":").map(Number);
-                                            const ampm = h < 12 ? "am" : "pm";
-                                            const h12 = h % 12 || 12;
-                                            return `${h12}${m ? `:${String(m).padStart(2, "0")}` : ""}${ampm}`;
-                                          })();
+                                    const timeLabel =
+                                      l.leave_type === "AM_HALF"
+                                        ? "오전 반차"
+                                        : l.leave_type === "PM_HALF"
+                                          ? "오후 반차"
+                                          : `반반차 (${l.start_time?.slice(0, 5)}-${l.end_time?.slice(0, 5)})`;
+                                    const dotColor =
+                                      l.leave_type === "AM_HALF"
+                                        ? "text-yellow-500"
+                                        : l.leave_type === "PM_HALF"
+                                          ? "text-green-500"
+                                          : "text-purple-500";
+                                    const startHour =
+                                      l.leave_type === "AM_HALF"
+                                        ? "9:00am"
+                                        : l.leave_type === "PM_HALF"
+                                          ? "1:30pm"
+                                          : (() => {
+                                              const [h, m] = (
+                                                l.start_time || ""
+                                              )
+                                                .split(":")
+                                                .map(Number);
+                                              const ampm = h < 12 ? "am" : "pm";
+                                              const h12 = h % 12 || 12;
+                                              return `${h12}${m ? `:${String(m).padStart(2, "0")}` : ""}${ampm}`;
+                                            })();
                                     return (
                                       <div
                                         key={l.id}
                                         className="text-xs flex items-center gap-0.5 truncate"
                                         title={`${l.user_name} · ${timeLabel}`}
                                       >
-                                        <span className={`${dotColor} flex-shrink-0`}>●</span>
+                                        <span
+                                          className={`${dotColor} flex-shrink-0`}
+                                        >
+                                          ●
+                                        </span>
                                         <span className="text-gray-600 truncate">
-                                          {startHour} {l.user_name} - {timeLabel}
+                                          {startHour} {l.user_name} -{" "}
+                                          {timeLabel}
                                         </span>
                                       </div>
                                     );
@@ -480,16 +536,23 @@ export default function AdminPage() {
                     </div>
                   ))}
                   {filtered.length === 0 && (
-                    <p className="text-center text-gray-400 text-sm py-6">해당 기간에 연차 내역이 없습니다.</p>
+                    <p className="text-center text-gray-400 text-sm py-6">
+                      해당 기간에 연차 내역이 없습니다.
+                    </p>
                   )}
                 </div>
               );
             }
 
             // 표 뷰
-            const sorted = [...filtered].sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+            const sorted = [...filtered].sort(
+              (a, b) => new Date(b.start_date) - new Date(a.start_date),
+            );
             const totalPages = Math.ceil(sorted.length / itemsPerPage);
-            const paginated = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+            const paginated = sorted.slice(
+              (currentPage - 1) * itemsPerPage,
+              currentPage * itemsPerPage,
+            );
 
             return (
               <>
@@ -507,39 +570,54 @@ export default function AdminPage() {
                     <tbody>
                       {paginated.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="text-center py-8 text-gray-400">해당 조건의 연차 내역이 없습니다.</td>
+                          <td
+                            colSpan={5}
+                            className="text-center py-8 text-gray-400"
+                          >
+                            해당 조건의 연차 내역이 없습니다.
+                          </td>
                         </tr>
-                      ) : paginated.map((leave) => {
-                        const dateDisplay = leave.start_date === leave.end_date
-                          ? leave.start_date
-                          : `${leave.start_date} ~ ${leave.end_date}`;
-                        return (
-                          <tr key={leave.id} className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-4">{dateDisplay}</td>
-                            <td className="py-3 px-4">{leave.user_name}</td>
-                            <td className="text-center py-3 px-4">
-                              <span className={`px-2 py-1 text-xs rounded ${leaveTypeBadge(leave)}`}>
-                                {leaveTypeLabel(leave)}
-                              </span>
-                            </td>
-                            <td className="text-center py-3 px-4">
-                              {leave.status === "APPROVED"
-                                ? <span className="text-green-600">승인</span>
-                                : <span className="text-gray-500">취소</span>}
-                            </td>
-                            <td className="text-center py-3 px-4">
-                              {leave.status === "APPROVED" && (
-                                <button
-                                  onClick={() => handleDeleteLeave(leave.id)}
-                                  className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
+                      ) : (
+                        paginated.map((leave) => {
+                          const dateDisplay =
+                            leave.start_date === leave.end_date
+                              ? leave.start_date
+                              : `${leave.start_date} ~ ${leave.end_date}`;
+                          return (
+                            <tr
+                              key={leave.id}
+                              className="border-b hover:bg-gray-50"
+                            >
+                              <td className="py-3 px-4">{dateDisplay}</td>
+                              <td className="py-3 px-4">{leave.user_name}</td>
+                              <td className="text-center py-3 px-4">
+                                <span
+                                  className={`px-2 py-1 text-xs rounded ${leaveTypeBadge(leave)}`}
                                 >
-                                  삭제
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                                  {leaveTypeLabel(leave)}
+                                </span>
+                              </td>
+                              <td className="text-center py-3 px-4">
+                                {leave.status === "APPROVED" ? (
+                                  <span className="text-green-600">승인</span>
+                                ) : (
+                                  <span className="text-gray-500">취소</span>
+                                )}
+                              </td>
+                              <td className="text-center py-3 px-4">
+                                {leave.status === "APPROVED" && (
+                                  <button
+                                    onClick={() => handleDeleteLeave(leave.id)}
+                                    className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
+                                  >
+                                    삭제
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -552,9 +630,13 @@ export default function AdminPage() {
                     >
                       이전
                     </button>
-                    <span className="text-sm text-gray-600">{currentPage} / {totalPages}</span>
+                    <span className="text-sm text-gray-600">
+                      {currentPage} / {totalPages}
+                    </span>
                     <button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={currentPage === totalPages}
                       className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
@@ -569,47 +651,63 @@ export default function AdminPage() {
       </main>
 
       {/* 작업 드롭다운 (fixed) */}
-      {openMenuId && (() => {
-        const user = users.find((u) => u.id === openMenuId);
-        if (!user) return null;
-        const hasSettlement = user.join_date && (() => {
-          const join = new Date(user.join_date);
-          const now = new Date();
-          const years = now.getFullYear() - join.getFullYear() - (
-            now.getMonth() < join.getMonth() ||
-            (now.getMonth() === join.getMonth() && now.getDate() < join.getDate()) ? 1 : 0
-          );
-          return years >= 1;
-        })();
-        return (
-          <div
-            ref={menuRef}
-            style={{ top: openMenuPos.top, right: openMenuPos.right }}
-            className="fixed w-40 bg-white border border-gray-200 rounded shadow-lg z-50"
-          >
-            <button
-              onClick={() => { setOpenMenuId(null); handleUpdateJoinDate(user.id, user.join_date); }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      {openMenuId &&
+        (() => {
+          const user = users.find((u) => u.id === openMenuId);
+          if (!user) return null;
+          const hasSettlement =
+            user.join_date &&
+            (() => {
+              const join = new Date(user.join_date);
+              const now = new Date();
+              const years =
+                now.getFullYear() -
+                join.getFullYear() -
+                (now.getMonth() < join.getMonth() ||
+                (now.getMonth() === join.getMonth() &&
+                  now.getDate() < join.getDate())
+                  ? 1
+                  : 0);
+              return years >= 1;
+            })();
+          return (
+            <div
+              ref={menuRef}
+              style={{ top: openMenuPos.top, right: openMenuPos.right }}
+              className="fixed w-40 bg-white border border-gray-200 rounded shadow-lg z-50"
             >
-              입사일 설정
-            </button>
-            <button
-              onClick={() => { setOpenMenuId(null); handleGrantLeave(user.id); }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              연차 지급
-            </button>
-            {hasSettlement && (
               <button
-                onClick={() => { setOpenMenuId(null); handleShowSettlements(user); }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                onClick={() => {
+                  setOpenMenuId(null);
+                  handleUpdateJoinDate(user.id, user.join_date);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                정산 내역
+                입사일 설정
               </button>
-            )}
-          </div>
-        );
-      })()}
+              <button
+                onClick={() => {
+                  setOpenMenuId(null);
+                  handleGrantLeave(user.id);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                연차 지급
+              </button>
+              {hasSettlement && (
+                <button
+                  onClick={() => {
+                    setOpenMenuId(null);
+                    handleShowSettlements(user);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                >
+                  정산 내역
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
       {/* 정산 내역 모달 */}
       {settlementModal && (
