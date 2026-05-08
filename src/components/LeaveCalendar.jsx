@@ -27,18 +27,25 @@ const leaveTypeConfig = {
 function CustomEvent({ event }) {
   const leave = event.resource;
   const config = leaveTypeConfig[leave.leave_type] || leaveTypeConfig.FULL;
-  const label =
-    leave.leave_type === "QUARTER_DAY" && leave.start_time && leave.end_time
-      ? `반반차 (${leave.start_time.substring(0, 5)}-${leave.end_time.substring(0, 5)})`
-      : config.label;
+  const isQuarter =
+    leave.leave_type === "QUARTER_DAY" && leave.start_time && leave.end_time;
+  const timeStr = isQuarter
+    ? `${leave.start_time.substring(0, 5)}-${leave.end_time.substring(0, 5)}`
+    : null;
 
   return (
-    <div className="flex items-center gap-1 px-1 truncate">
+    <div
+      className="flex items-center gap-1 px-1 truncate"
+      title={isQuarter ? `반반차 (${timeStr})` : config.label}
+    >
       <span
         className="flex-shrink-0 w-2 h-2 rounded-full"
         style={{ backgroundColor: config.dot }}
       />
-      <span className="truncate text-xs text-gray-800">{label}</span>
+      <span className="truncate text-xs text-gray-800">
+        {config.label}
+        {isQuarter && <span className="text-gray-500"> {timeStr}</span>}
+      </span>
     </div>
   );
 }
