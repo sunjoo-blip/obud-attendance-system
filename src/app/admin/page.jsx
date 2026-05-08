@@ -29,6 +29,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [settlementModal, setSettlementModal] = useState(null); // { user, settlements }
+  const [settlementLoading, setSettlementLoading] = useState(false);
   const menuRef = useRef(null);
   const itemsPerPage = 10;
 
@@ -123,6 +125,20 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Grant leave error:", error);
       alert("연차 지급 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleShowSettlements = async (user) => {
+    setSettlementLoading(true);
+    setSettlementModal({ user, settlements: [] });
+    try {
+      const res = await fetch(`/api/admin/settlements?userId=${user.id}`);
+      const data = await res.json();
+      setSettlementModal({ user, settlements: data.settlements || [] });
+    } catch (error) {
+      console.error("Get settlements error:", error);
+    } finally {
+      setSettlementLoading(false);
     }
   };
 
@@ -260,7 +276,7 @@ export default function AdminPage() {
                           <span className="text-xs">▾</span>
                         </button>
                         {openMenuId === user.id && (
-                          <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded shadow-lg z-10">
+                          <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded shadow-lg z-10">
                             <button
                               onClick={() => {
                                 setOpenMenuId(null);
@@ -279,6 +295,25 @@ export default function AdminPage() {
                             >
                               연차 지급
                             </button>
+                            {user.join_date && (() => {
+                              const join = new Date(user.join_date);
+                              const now = new Date();
+                              const years = now.getFullYear() - join.getFullYear() - (
+                                now.getMonth() < join.getMonth() ||
+                                (now.getMonth() === join.getMonth() && now.getDate() < join.getDate()) ? 1 : 0
+                              );
+                              return years >= 1;
+                            })() && (
+                              <button
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  handleShowSettlements(user);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                              >
+                                정산 내역
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -412,6 +447,71 @@ export default function AdminPage() {
           })()}
         </div>
       </main>
+
+      {/* 정산 내역 모달 */}
+      {settlementModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setSettlementModal(null)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="text-lg font-bold text-gray-900">
+                {settlementModal.user.name} 정산 내역
+              </h3>
+              <button
+                onClick={() => setSettlementModal(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              {settlementLoading ? (
+                <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+              ) : settlementModal.settlements.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">정산 내역이 없습니다.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-gray-500">
+                      <th className="text-left py-2 px-3">정산일</th>
+                      <th className="text-center py-2 px-3">근속연수</th>
+                      <th className="text-center py-2 px-3">지급 연차</th>
+                      <th className="text-center py-2 px-3">사용 연차</th>
+                      <th className="text-center py-2 px-3">미사용</th>
+                      <th className="text-center py-2 px-3">정산 금액</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {settlementModal.settlements.map((s) => (
+                      <tr key={s.id} className="border-b hover:bg-gray-50">
+                        <td className="py-2 px-3 text-gray-700">{s.settlement_date}</td>
+                        <td className="text-center py-2 px-3">{s.years_of_service}년차</td>
+                        <td className="text-center py-2 px-3 font-medium text-blue-600">{s.total_leaves}개</td>
+                        <td className="text-center py-2 px-3 text-gray-600">{s.used_leaves}개</td>
+                        <td className="text-center py-2 px-3">
+                          <span className={s.unused_leaves > 0 ? "font-medium text-orange-600" : "text-gray-400"}>
+                            {s.unused_leaves}개
+                          </span>
+                        </td>
+                        <td className="text-center py-2 px-3">
+                          {s.settlement_amount != null
+                            ? `${Number(s.settlement_amount).toLocaleString()}원`
+                            : <span className="text-gray-400">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
