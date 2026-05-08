@@ -2,8 +2,24 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+
+function calcTenure(joinDate) {
+  if (!joinDate) return null;
+  const join = new Date(joinDate);
+  const now = new Date();
+  let years = now.getFullYear() - join.getFullYear();
+  let months = now.getMonth() - join.getMonth();
+  if (now.getDate() < join.getDate()) months--;
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  if (years < 0) return "1개월 미만";
+  if (years === 0) return `${months}개월`;
+  return months === 0 ? `${years}년` : `${years}년 ${months}개월`;
+}
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -12,7 +28,19 @@ export default function AdminPage() {
   const [allLeaves, setAllLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -159,7 +187,7 @@ export default function AdminPage() {
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">사용자</th>
                   <th className="text-center py-3 px-4">이메일</th>
-                  <th className="text-center py-3 px-4">입사일</th>
+                  <th className="text-center py-3 px-4">재직기간</th>
                   <th className="text-center py-3 px-4">전체 연차</th>
                   <th className="text-center py-3 px-4">사용 연차</th>
                   <th className="text-center py-3 px-4">남은 연차</th>
@@ -187,14 +215,18 @@ export default function AdminPage() {
                       {user.email}
                     </td>
                     <td className="text-center py-3 px-4">
-                      <button
-                        onClick={() =>
-                          handleUpdateJoinDate(user.id, user.join_date)
-                        }
-                        className="text-sm text-gray-600 hover:text-blue-600 underline"
-                      >
-                        {user.join_date || "미설정"}
-                      </button>
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-800">
+                          {calcTenure(user.join_date) ?? (
+                            <span className="text-gray-400">미설정</span>
+                          )}
+                        </div>
+                        {user.join_date && (
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {user.join_date}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="text-center py-3 px-4">
                       <span className="font-bold text-blue-600">
@@ -212,12 +244,44 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="text-center py-3 px-4">
-                      <button
-                        onClick={() => handleGrantLeave(user.id)}
-                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                      <div
+                        className="relative inline-block"
+                        ref={openMenuId === user.id ? menuRef : null}
                       >
-                        연차 지급
-                      </button>
+                        <button
+                          onClick={() =>
+                            setOpenMenuId(
+                              openMenuId === user.id ? null : user.id,
+                            )
+                          }
+                          className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-1"
+                        >
+                          작업
+                          <span className="text-xs">▾</span>
+                        </button>
+                        {openMenuId === user.id && (
+                          <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded shadow-lg z-10">
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleUpdateJoinDate(user.id, user.join_date);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              입사일 설정
+                            </button>
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleGrantLeave(user.id);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              연차 지급
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
