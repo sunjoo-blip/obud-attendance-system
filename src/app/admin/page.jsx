@@ -337,21 +337,57 @@ export default function AdminPage() {
             </select>
 
             {/* 월 */}
-            <select
-              value={filterMonth}
-              onChange={(e) => {
-                setFilterMonth(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
-            >
-              {leaveView === "table" && <option value={0}>전체</option>}
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                <option key={m} value={m}>
-                  {m}월
-                </option>
-              ))}
-            </select>
+            {leaveView === "calendar" ? (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (filterMonth === 1) {
+                      setFilterYear((y) => y - 1);
+                      setFilterMonth(12);
+                    } else {
+                      setFilterMonth((m) => m - 1);
+                    }
+                    setCurrentPage(1);
+                  }}
+                  className="px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  ‹
+                </button>
+                <span className="px-2 text-sm text-gray-700 min-w-[3rem] text-center">
+                  {filterMonth}월
+                </span>
+                <button
+                  onClick={() => {
+                    if (filterMonth === 12) {
+                      setFilterYear((y) => y + 1);
+                      setFilterMonth(1);
+                    } else {
+                      setFilterMonth((m) => m + 1);
+                    }
+                    setCurrentPage(1);
+                  }}
+                  className="px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  ›
+                </button>
+              </div>
+            ) : (
+              <select
+                value={filterMonth}
+                onChange={(e) => {
+                  setFilterMonth(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
+              >
+                <option value={0}>전체</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>
+                    {m}월
+                  </option>
+                ))}
+              </select>
+            )}
 
             {/* 뷰 토글 */}
             <div className="flex border border-gray-300 rounded overflow-hidden text-sm">
