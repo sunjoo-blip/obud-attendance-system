@@ -46,7 +46,7 @@ export default function DashboardPage() {
     const normalizedDate = new Date(
       date.getFullYear(),
       date.getMonth(),
-      date.getDate()
+      date.getDate(),
     );
     setSelectedDate(normalizedDate);
     setShowModal(true);
@@ -254,6 +254,33 @@ export default function DashboardPage() {
                 </span>
               </li>
             </ul>
+
+            <div className="mt-5 pt-4 border-t border-gray-200">
+              <p className="text-sm font-bold text-gray-900 mb-3">
+                💰 미사용 연차 정산
+              </p>
+              <ul className="space-y-3 text-sm text-gray-700">
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span>
+                    미사용 연차는 <strong>일당으로 환산</strong>하여 급여에
+                    정산합니다.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-0.5">•</span>
+                  <span>
+                    정산 시점: <strong>입사 기념월 급여</strong>에 직전 1년간
+                    미사용 연차 반영
+                    <br />
+                    {/* <span className="text-gray-500">
+                      (ex. 입사일 2024-04-01 → 2026년 5월 급여에 2025-05
+                      ~ 2026-04 기간 미사용 연차 정산)
+                    </span> */}
+                  </span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       )}
