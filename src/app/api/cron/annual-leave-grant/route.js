@@ -4,10 +4,10 @@ import { query } from "@/lib/db";
 // 매일 자동 실행 - 입사일 기준으로 월차/연차 지급
 export async function GET(req) {
   try {
-    const authHeader = req.headers.get('authorization');
+    const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const currentDate = new Date();
@@ -20,10 +20,16 @@ export async function GET(req) {
       monthlyGrantsCount: 0,
       annualRecalcCount: 0,
       settlementsCount: 0,
+      birthdayGrantsCount: 0,
       skippedNoJoinDate: 0,
       skippedNotAnniversary: 0,
       errors: [],
     };
+
+    // 매월 1일: 당월 생일자 연차 지급
+    if (currentDay === 1) {
+      await grantBirthdayLeaves(currentMonth, stats);
+    }
 
     const usersResult = await query(
       `SELECT id, TO_CHAR(join_date, 'YYYY-MM-DD') as join_date
@@ -93,6 +99,7 @@ export async function GET(req) {
         monthlyGrantsCount: stats.monthlyGrantsCount,
         annualRecalcCount: stats.annualRecalcCount,
         settlementsCount: stats.settlementsCount,
+        birthdayGrantsCount: stats.birthdayGrantsCount,
         skippedNoJoinDate: stats.skippedNoJoinDate,
         skippedNotAnniversary: stats.skippedNotAnniversary,
       },
@@ -159,6 +166,55 @@ async function grantMonthlyLeave(userId, currentMonth, stats) {
 
   stats.monthlyGrantsCount++;
   return true;
+}
+
+// 당월 생일자 생일 연차 지급 (매월 1일 실행)
+async function grantBirthdayLeaves(currentMonth, stats) {
+  const currentMonthNum = parseInt(currentMonth.slice(5, 7), 10);
+
+  const usersResult = await query(
+    `SELECT id FROM users
+     WHERE birth_date IS NOT NULL
+       AND EXTRACT(MONTH FROM birth_date) = $1`,
+    [currentMonthNum],
+  );
+
+  for (const user of usersResult.rows) {
+    try {
+      // 중복 지급 방지
+      const checkResult = await query(
+        `SELECT id FROM monthly_leave_grants
+         WHERE user_id = $1 AND grant_month = $2 AND grant_type = 'BIRTHDAY'`,
+        [user.id, currentMonth],
+      );
+
+      if (checkResult.rows.length > 0) continue;
+
+      await query(
+        `INSERT INTO leave_balance (user_id, birthday_leaves)
+         VALUES ($1, 1)
+         ON CONFLICT (user_id)
+         DO UPDATE SET
+           birthday_leaves = leave_balance.birthday_leaves + 1,
+           updated_at = CURRENT_TIMESTAMP`,
+        [user.id],
+      );
+
+      await query(
+        `INSERT INTO monthly_leave_grants (user_id, grant_month, amount, grant_type)
+         VALUES ($1, $2, 1, 'BIRTHDAY')`,
+        [user.id, currentMonth],
+      );
+
+      stats.birthdayGrantsCount++;
+    } catch (error) {
+      console.error(
+        `Failed to grant birthday leave for user ${user.id}:`,
+        error,
+      );
+      stats.errors.push({ userId: user.id, error: error.message });
+    }
+  }
 }
 
 // 연차 기념일 처리:

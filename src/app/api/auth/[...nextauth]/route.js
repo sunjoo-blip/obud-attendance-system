@@ -85,7 +85,8 @@ export const authOptions = {
         const result = await query(
           `SELECT u.id, u.email, u.name, u.profile_image, u.is_admin,
                   lb.total_leaves, lb.used_leaves,
-                  (lb.total_leaves - lb.used_leaves) as remaining_leaves
+                  (lb.total_leaves - lb.used_leaves) as remaining_leaves,
+                  COALESCE(lb.birthday_leaves, 0) as birthday_leaves
            FROM users u
            LEFT JOIN leave_balance lb ON u.id = lb.user_id
            WHERE u.email = $1`,
@@ -99,6 +100,7 @@ export const authOptions = {
           session.user.totalLeaves = parseFloat(user.total_leaves) || 0;
           session.user.usedLeaves = parseFloat(user.used_leaves) || 0;
           session.user.remainingLeaves = parseFloat(user.remaining_leaves) || 0;
+          session.user.birthdayLeaves = parseFloat(user.birthday_leaves) || 0;
         }
       }
       return session;

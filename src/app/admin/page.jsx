@@ -212,6 +212,7 @@ export default function AdminPage() {
                   <th className="text-center py-3 px-4">전체 연차</th>
                   <th className="text-center py-3 px-4">사용 연차</th>
                   <th className="text-center py-3 px-4">남은 연차</th>
+                  <th className="text-center py-3 px-4">생일 연차</th>
                   <th className="text-center py-3 px-4">작업</th>
                 </tr>
               </thead>
@@ -262,6 +263,11 @@ export default function AdminPage() {
                     <td className="text-center py-3 px-4">
                       <span className="font-bold text-green-600">
                         {user.remaining_leaves || 0}개
+                      </span>
+                    </td>
+                    <td className="text-center py-3 px-4">
+                      <span className="font-bold text-pink-500">
+                        {user.birthday_leaves || 0}개
                       </span>
                     </td>
                     <td className="text-center py-3 px-4">

@@ -5,9 +5,10 @@ CREATE TABLE users (
   name VARCHAR(255) NOT NULL,
   profile_image TEXT,
   is_admin BOOLEAN DEFAULT FALSE,
-  slack_user_id VARCHAR(255), -- Slack 워크스페이스 사용자 ID (로그인 시 자동 설정)
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  join_date date
+  -- slack_user_id VARCHAR(255), -- Slack 워크스페이스 사용자 ID (로그인 시 자동 설정)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  join_date date,
+  birth_date date
 );
 
 -- 연차 잔액 테이블
@@ -16,6 +17,7 @@ CREATE TABLE leave_balance (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   total_leaves DECIMAL(5,2) DEFAULT 0,
   used_leaves DECIMAL(5,2) DEFAULT 0,
+  birthday_leaves DECIMAL(5,2) DEFAULT 0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id)
 );
@@ -29,6 +31,7 @@ CREATE TABLE leave_requests (
   leave_type VARCHAR(20) NOT NULL CHECK (leave_type IN ('FULL', 'AM_HALF', 'PM_HALF', 'QUARTER_DAY')),
   status VARCHAR(20) NOT NULL DEFAULT 'APPROVED' CHECK (status IN ('APPROVED', 'CANCELLED')),
   google_calendar_event_id VARCHAR(255),
+  birthday_used DECIMAL(5,2) DEFAULT 0,
   start_time TIME,
   end_time TIME,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -41,7 +44,7 @@ CREATE TABLE monthly_leave_grants (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   grant_month VARCHAR(7) NOT NULL, -- YYYY-MM
   amount DECIMAL(5,2) DEFAULT 1,
-  grant_type VARCHAR(20) NOT NULL DEFAULT 'MONTHLY' CHECK (grant_type IN ('MONTHLY', 'ANNUAL', 'MANUAL')),
+  grant_type VARCHAR(20) NOT NULL DEFAULT 'MONTHLY' CHECK (grant_type IN ('MONTHLY', 'ANNUAL', 'MANUAL', 'BIRTHDAY')),
   years_of_service INTEGER, -- 근속 년수 (ANNUAL 타입일 때만 기록)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

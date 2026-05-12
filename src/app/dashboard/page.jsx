@@ -123,6 +123,11 @@ export default function DashboardPage() {
                   (전체: {session.user.totalLeaves}개 / 사용:{" "}
                   {session.user.usedLeaves}개)
                 </p>
+                {session.user.birthdayLeaves > 0 && (
+                  <p className="text-xs text-pink-500 font-medium mt-0.5">
+                    🎂 생일 연차 {session.user.birthdayLeaves}개
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 {session.user.image && (

@@ -15,7 +15,8 @@ export async function GET() {
         TO_CHAR(u.join_date, 'YYYY-MM-DD') as join_date,
         COALESCE(lb.total_leaves, 0) as total_leaves,
         COALESCE(lb.used_leaves, 0) as used_leaves,
-        COALESCE(lb.total_leaves - lb.used_leaves, 0) as remaining_leaves
+        COALESCE(lb.total_leaves - lb.used_leaves, 0) as remaining_leaves,
+        COALESCE(lb.birthday_leaves, 0) as birthday_leaves
        FROM users u
        LEFT JOIN leave_balance lb ON u.id = lb.user_id
        ORDER BY u.name`

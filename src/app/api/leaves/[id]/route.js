@@ -39,19 +39,6 @@ export async function DELETE(req, { params }) {
       return Response.json({ error: '지난 연차는 취소할 수 없습니다.' }, { status: 400 });
     }
 
-    // 연차 사용량 계산
-    let leaveAmount;
-    if (leave.leave_type === 'FULL') {
-      const start = new Date(leave.start_date);
-      const end = new Date(leave.end_date);
-      const daysDiff = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      leaveAmount = daysDiff;
-    } else if (leave.leave_type === 'QUARTER_DAY') {
-      leaveAmount = 0.25;
-    } else {
-      leaveAmount = 0.5; // AM_HALF, PM_HALF
-    }
-
     // 연차 취소
     await query(
       `UPDATE leave_requests
@@ -59,12 +46,29 @@ export async function DELETE(req, { params }) {
        WHERE id = $1`,
       [id]
     );
+
+    // 원래 사용량 재계산
+    const start = new Date(leave.start_date);
+    const end = new Date(leave.end_date);
+    let leaveAmount;
+    if (leave.leave_type === 'FULL') {
+      leaveAmount = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    } else if (leave.leave_type === 'QUARTER_DAY') {
+      leaveAmount = 0.25;
+    } else {
+      leaveAmount = 0.5;
+    }
+
+    // 생일 연차 먼저 복구, 나머지는 일반 연차 복구
+    const birthdayUsed = parseFloat(leave.birthday_used || 0);
+    const normalUsed = leaveAmount - birthdayUsed;
     await query(
-      `UPDATE leave_balance 
-       SET used_leaves = used_leaves - $1,
+      `UPDATE leave_balance
+       SET birthday_leaves = birthday_leaves + $1,
+           used_leaves = used_leaves - $2,
            updated_at = CURRENT_TIMESTAMP
-       WHERE user_id = $2`,
-      [leaveAmount, session.user.id]
+       WHERE user_id = $3`,
+      [birthdayUsed, normalUsed, session.user.id]
     );
 
     // Google Calendar 이벤트 삭제
