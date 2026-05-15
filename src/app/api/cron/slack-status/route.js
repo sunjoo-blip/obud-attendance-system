@@ -1,6 +1,8 @@
 import { query } from "@/lib/db";
 import { setSlackStatus, clearSlackStatus } from "@/lib/slack";
 
+export const dynamic = "force-dynamic";
+
 // 매일 자정 (00:00): 오늘 연차인 사람들 Slack 상태 설정
 // 매일 저녁 (18:00): 오늘 연차인 사람들 Slack 상태 원복
 export async function GET(req) {

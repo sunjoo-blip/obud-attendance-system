@@ -1,5 +1,7 @@
 import { query } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // 입사일 기반 연차 자동 계산 및 지급
 // 매일 자동 실행 - 입사일 기준으로 월차/연차 지급
 export async function GET(req) {
