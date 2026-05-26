@@ -249,20 +249,43 @@ async function settleAndGrantAnnualLeave(
     return false;
   }
 
-  // 현재 잔여 연차 조회 (정산 대상)
+  // 이전 연차 기간: (yearsOfService-1)주년 입사일 ~ 이번 기념일 전날
+  // ex. yearsOfService=2 이면 1주년일 ~ 2주년일 전날
+  const prevAnniversary = new Date(joinDate);
+  prevAnniversary.setFullYear(joinDate.getFullYear() + yearsOfService - 1);
+  const periodStart = prevAnniversary.toISOString().slice(0, 10);
+
+  const periodEnd = new Date(currentDate);
+  periodEnd.setDate(periodEnd.getDate() - 1);
+  const periodEndStr = periodEnd.toISOString().slice(0, 10);
+
+  // 이전 연차 기간에 실제로 사용한 연차만 집계 (start_date 기준, APPROVED 건만)
+  // 입사일 이전에 결재했더라도 start_date가 기간 안에 있으면 포함,
+  // 기간 밖(입사일 이후 날짜)이면 제외
+  const usedResult = await query(
+    `SELECT COALESCE(SUM(
+       CASE leave_type
+         WHEN 'HALF' THEN 0.5
+         ELSE 1
+       END
+     ), 0) as used_leaves
+     FROM leave_requests
+     WHERE user_id = $1
+       AND status = 'APPROVED'
+       AND start_date >= $2
+       AND start_date <= $3`,
+    [userId, periodStart, periodEndStr],
+  );
+
+  // 이전 기간에 지급된 총 연차 조회
   const balanceResult = await query(
-    `SELECT COALESCE(total_leaves, 0) as total_leaves,
-            COALESCE(used_leaves, 0) as used_leaves
+    `SELECT COALESCE(total_leaves, 0) as total_leaves
      FROM leave_balance WHERE user_id = $1`,
     [userId],
   );
 
-  const prevBalance = balanceResult.rows[0] || {
-    total_leaves: 0,
-    used_leaves: 0,
-  };
-  const prevTotal = parseFloat(prevBalance.total_leaves);
-  const prevUsed = parseFloat(prevBalance.used_leaves);
+  const prevTotal = parseFloat(balanceResult.rows[0]?.total_leaves ?? 0);
+  const prevUsed = parseFloat(usedResult.rows[0]?.used_leaves ?? 0);
   const unusedLeaves = Math.max(0, prevTotal - prevUsed);
 
   // 미사용 연차 정산 이력 저장 (일당은 별도 입력 전까지 null)
