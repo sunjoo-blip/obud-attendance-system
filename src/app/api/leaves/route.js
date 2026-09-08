@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { query } from "@/lib/db";
 import { addGoogleCalendarEvent } from "@/lib/googleCalendar";
+import { sendLeaveNotification } from "@/lib/slack";
 import { LEAVE_TYPE_CONFIG, calculateLeaveAmount } from "@/lib/leaveCalculator";
 
 // GET: 내 연차 조회
@@ -219,7 +220,25 @@ export async function POST(req) {
       // 캘린더 오류는 무시하고 계속 진행
     }
 
-    // TODO: Slack 알림 추가
+    // Slack 채널 알림 발송
+    try {
+      const userResult = await query(`SELECT name FROM users WHERE id = $1`, [
+        session.user.id,
+      ]);
+      const userName = userResult.rows[0]?.name || session.user.name;
+
+      await sendLeaveNotification({
+        userName,
+        leaveType,
+        startDate,
+        endDate,
+        startTime,
+        endTime,
+      });
+    } catch (slackError) {
+      console.error("Slack notification error:", slackError);
+      // 알림 오류는 무시하고 계속 진행
+    }
 
     return Response.json({ success: true, leave });
   } catch (error) {

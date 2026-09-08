@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { query } from '@/lib/db';
 import { deleteGoogleCalendarEvent } from '@/lib/googleCalendar';
+import { sendLeaveCancellationNotification } from '@/lib/slack';
 
 // DELETE: 연차 취소
 export async function DELETE(req, { params }) {
@@ -80,7 +81,34 @@ export async function DELETE(req, { params }) {
       }
     }
 
-    // TODO: Slack 상태 원복
+    // Slack 채널 취소 알림 발송
+    try {
+      const userResult = await query(`SELECT name FROM users WHERE id = $1`, [
+        session.user.id,
+      ]);
+      const userName = userResult.rows[0]?.name || session.user.name;
+
+      // DATE 컬럼을 YYYY-MM-DD 문자열로 변환 (로컬 타임존 기준)
+      const formatDate = (date) => {
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      await sendLeaveCancellationNotification({
+        userName,
+        leaveType: leave.leave_type,
+        startDate: formatDate(leave.start_date),
+        endDate: formatDate(leave.end_date),
+        startTime: leave.start_time?.slice(0, 5),
+        endTime: leave.end_time?.slice(0, 5),
+      });
+    } catch (slackError) {
+      console.error('Slack cancellation notification error:', slackError);
+      // 알림 오류는 무시하고 계속 진행
+    }
 
     return Response.json({ success: true });
   } catch (error) {
