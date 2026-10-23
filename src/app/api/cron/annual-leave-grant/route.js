@@ -287,6 +287,8 @@ async function settleAndGrantAnnualLeave(
   const prevTotal = parseFloat(balanceResult.rows[0]?.total_leaves ?? 0);
   const prevUsed = parseFloat(usedResult.rows[0]?.used_leaves ?? 0);
   const unusedLeaves = Math.max(0, prevTotal - prevUsed);
+  // 초과 사용분(마이너스): 새 연차 기간으로 이월하여 차감
+  const overUsedLeaves = Math.max(0, prevUsed - prevTotal);
 
   // 미사용 연차 정산 이력 저장 (일당은 별도 입력 전까지 null)
   if (unusedLeaves > 0) {
@@ -307,18 +309,18 @@ async function settleAndGrantAnnualLeave(
     stats.settlementsCount++;
   }
 
-  // 새 연차 개수로 leave_balance 리셋
+  // 새 연차 개수로 leave_balance 리셋 (초과 사용분은 used_leaves로 이월)
   const newAnnualLeaves = calculateAnnualLeaves(yearsOfService);
 
   await query(
     `INSERT INTO leave_balance (user_id, total_leaves, used_leaves)
-     VALUES ($1, $2, 0)
+     VALUES ($1, $2, $3)
      ON CONFLICT (user_id)
      DO UPDATE SET
        total_leaves = $2,
-       used_leaves = 0,
+       used_leaves = $3,
        updated_at = CURRENT_TIMESTAMP`,
-    [userId, newAnnualLeaves],
+    [userId, newAnnualLeaves, overUsedLeaves],
   );
 
   // 연차 지급 이력 저장
@@ -330,7 +332,7 @@ async function settleAndGrantAnnualLeave(
 
   stats.annualRecalcCount++;
   console.log(
-    `User ${userId}: settled ${unusedLeaves} unused leaves, granted ${newAnnualLeaves} new annual leaves (year ${yearsOfService})`,
+    `User ${userId}: settled ${unusedLeaves} unused leaves, carried over ${overUsedLeaves} over-used leaves, granted ${newAnnualLeaves} new annual leaves (year ${yearsOfService})`,
   );
 
   return true;
