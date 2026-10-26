@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { getFamilyEventLabel } from "@/lib/familyEvent";
 
 function calcTenure(joinDate) {
   if (!joinDate) return null;
@@ -30,6 +31,7 @@ export default function AdminPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [leaveView, setLeaveView] = useState("table"); // "table" | "calendar"
   const [filterUser, setFilterUser] = useState(""); // user id or ""
+  const [filterCategory, setFilterCategory] = useState(""); // "" | "ANNUAL" | "FAMILY_EVENT"
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -306,6 +308,20 @@ export default function AdminPage() {
               📋 전체 연차 내역
             </h2>
 
+            {/* 종류 필터 (연차 / 경조사) */}
+            <select
+              value={filterCategory}
+              onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
+            >
+              <option value="">전체 종류</option>
+              <option value="ANNUAL">연차</option>
+              <option value="FAMILY_EVENT">경조사</option>
+            </select>
+
             {/* 직원 필터 */}
             <select
               value={filterUser}
@@ -421,6 +437,10 @@ export default function AdminPage() {
             const filtered = allLeaves.filter((l) => {
               if (filterUser && String(l.user_id) !== String(filterUser))
                 return false;
+              if (filterCategory === "FAMILY_EVENT" && l.category !== "FAMILY_EVENT")
+                return false;
+              if (filterCategory === "ANNUAL" && l.category === "FAMILY_EVENT")
+                return false;
               const d = new Date(l.start_date);
               if (d.getFullYear() !== filterYear) return false;
               if (filterMonth !== 0 && d.getMonth() + 1 !== filterMonth)
@@ -429,18 +449,22 @@ export default function AdminPage() {
             });
 
             const leaveTypeLabel = (leave) => {
+              if (leave.category === "FAMILY_EVENT")
+                return `경조사 · ${getFamilyEventLabel(leave.event_type, leave.event_relation)}`;
               if (leave.leave_type === "FULL") return "연차";
               if (leave.leave_type === "AM_HALF") return "오전 반차";
               if (leave.leave_type === "PM_HALF") return "오후 반차";
               return `반반차 ${leave.start_time?.slice(0, 5)}~${leave.end_time?.slice(0, 5)}`;
             };
             const leaveTypeBadge = (leave) => {
+              if (leave.category === "FAMILY_EVENT")
+                return "bg-purple-100 text-purple-800";
               if (leave.leave_type === "FULL") return "bg-red-100 text-red-800";
               if (leave.leave_type === "AM_HALF")
                 return "bg-yellow-100 text-yellow-800";
               if (leave.leave_type === "PM_HALF")
                 return "bg-green-100 text-green-800";
-              return "bg-purple-100 text-purple-800";
+              return "bg-cyan-100 text-cyan-800";
             };
 
             if (leaveView === "calendar") {
@@ -513,6 +537,21 @@ export default function AdminPage() {
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                   {leaves.map((l) => {
+                                    if (l.category === "FAMILY_EVENT") {
+                                      const famLabel = getFamilyEventLabel(
+                                        l.event_type,
+                                        l.event_relation,
+                                      );
+                                      return (
+                                        <div
+                                          key={l.id}
+                                          className="text-xs px-1.5 py-0.5 rounded bg-purple-400 text-white truncate"
+                                          title={`${l.user_name} · 경조사 ${famLabel}`}
+                                        >
+                                          {l.user_name} - {famLabel}
+                                        </div>
+                                      );
+                                    }
                                     if (l.leave_type === "FULL") {
                                       return (
                                         <div

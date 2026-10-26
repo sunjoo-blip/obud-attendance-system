@@ -16,6 +16,7 @@ export async function GET(req) {
         TO_CHAR(lr.end_date, 'YYYY-MM-DD') as end_date,
         lr.leave_type, lr.status,
         lr.start_time, lr.end_time,
+        lr.category, lr.event_type, lr.event_relation,
         lr.created_at, lr.cancelled_at,
         u.name as user_name, u.email as user_email
        FROM leave_requests lr
