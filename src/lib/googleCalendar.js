@@ -120,6 +120,52 @@ export async function addGoogleCalendarEvent({
   }
 }
 
+// 경조사 종일 이벤트 추가 (start_date ~ end_date 범위, 연차와 다른 색상)
+export async function addFamilyEventCalendarEvent({
+  userName,
+  startDate,
+  endDate,
+  eventLabel,
+}) {
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const startDateStr = formatDate(start);
+    const endDateStr = formatDate(end);
+
+    // 종일 이벤트는 end가 exclusive 이므로 하루 추가
+    const nextDay = new Date(end);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = formatDate(nextDay);
+
+    const event = {
+      summary: `${userName} - 경조사 (${eventLabel})`,
+      description: `${userName}님의 경조사 - ${eventLabel} (${startDateStr} ~ ${endDateStr})`,
+      start: { date: startDateStr },
+      end: { date: nextDayStr },
+      colorId: "3", // Grape (보라) - 경조사 구분용
+    };
+
+    const response = await calendar.events.insert({
+      calendarId: process.env.GOOGLE_CALENDAR_ID,
+      requestBody: event,
+    });
+
+    return response.data.id;
+  } catch (error) {
+    console.error("Google Calendar family event error:", error);
+    throw error;
+  }
+}
+
 export async function deleteGoogleCalendarEvent(eventId) {
   try {
     await calendar.events.delete({

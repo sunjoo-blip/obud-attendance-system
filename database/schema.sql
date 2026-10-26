@@ -22,7 +22,7 @@ CREATE TABLE leave_balance (
   UNIQUE(user_id)
 );
 
--- 연차 신청 테이블
+-- 연차 신청 테이블 (연차 + 경조사 공용)
 CREATE TABLE leave_requests (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -34,6 +34,10 @@ CREATE TABLE leave_requests (
   birthday_used DECIMAL(5,2) DEFAULT 0,
   start_time TIME,
   end_time TIME,
+  -- 경조사 관련 컬럼 (category='ANNUAL'이면 일반 연차, 'FAMILY_EVENT'이면 경조사)
+  category VARCHAR(20) NOT NULL DEFAULT 'ANNUAL' CHECK (category IN ('ANNUAL', 'FAMILY_EVENT')),
+  event_type VARCHAR(20) CHECK (event_type IN ('MARRIAGE', 'DEATH', 'BIRTH')), -- 경조사 구분 (결혼/사망/출산)
+  event_relation VARCHAR(30), -- 경조사 대상 (SELF, SPOUSE, PARENT 등)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   cancelled_at TIMESTAMP
 );
@@ -74,3 +78,15 @@ CREATE INDEX idx_monthly_grants_type ON monthly_leave_grants(grant_type);
 CREATE INDEX idx_monthly_grants_user_type ON monthly_leave_grants(user_id, grant_type);
 CREATE INDEX idx_leave_settlements_user ON leave_settlements(user_id);
 CREATE INDEX idx_leave_settlements_date ON leave_settlements(settlement_date);
+CREATE INDEX idx_leave_requests_category ON leave_requests(category);
+
+-- =====================================================================
+-- 경조사 기능 추가 마이그레이션 (기존 DB에 적용 시 아래 실행)
+-- =====================================================================
+-- ALTER TABLE leave_requests
+--   ADD COLUMN IF NOT EXISTS category VARCHAR(20) NOT NULL DEFAULT 'ANNUAL'
+--     CHECK (category IN ('ANNUAL', 'FAMILY_EVENT')),
+--   ADD COLUMN IF NOT EXISTS event_type VARCHAR(20)
+--     CHECK (event_type IN ('MARRIAGE', 'DEATH', 'BIRTH')),
+--   ADD COLUMN IF NOT EXISTS event_relation VARCHAR(30);
+-- CREATE INDEX IF NOT EXISTS idx_leave_requests_category ON leave_requests(category);

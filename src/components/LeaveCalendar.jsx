@@ -4,10 +4,13 @@ import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useMemo, useState } from "react";
+import { getFamilyEventLabel } from "@/lib/familyEvent";
 
 const locales = {
   ko: ko,
 };
+
+const FAMILY_EVENT_STYLE = { bg: "bg-purple-500", dot: "#a855f7", label: "경조사" };
 
 const localizer = dateFnsLocalizer({
   format,
@@ -26,24 +29,31 @@ const leaveTypeConfig = {
 
 function CustomEvent({ event }) {
   const leave = event.resource;
-  const config = leaveTypeConfig[leave.leave_type] || leaveTypeConfig.FULL;
+  const isFamily = leave.category === "FAMILY_EVENT";
+  const config = isFamily
+    ? FAMILY_EVENT_STYLE
+    : leaveTypeConfig[leave.leave_type] || leaveTypeConfig.FULL;
+  const familyLabel = isFamily
+    ? getFamilyEventLabel(leave.event_type, leave.event_relation)
+    : null;
   const isQuarter =
     leave.leave_type === "QUARTER_DAY" && leave.start_time && leave.end_time;
   const timeStr = isQuarter
     ? `${leave.start_time.substring(0, 5)}-${leave.end_time.substring(0, 5)}`
     : null;
+  const label = isFamily ? familyLabel : config.label;
 
   return (
     <div
       className="flex flex-col px-1"
-      title={isQuarter ? `반반차 (${timeStr})` : config.label}
+      title={isQuarter ? `반반차 (${timeStr})` : label}
     >
       <div className="flex items-center gap-1 truncate">
         <span
           className="flex-shrink-0 w-2 h-2 rounded-full"
           style={{ backgroundColor: config.dot }}
         />
-        <span className="truncate text-xs text-gray-800">{config.label}</span>
+        <span className="truncate text-xs text-gray-800">{label}</span>
       </div>
       {isQuarter && (
         <span className="text-[10px] text-gray-400 pl-3 leading-tight">{timeStr}</span>
@@ -97,7 +107,9 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
         const config =
           leaveTypeConfig[leave.leave_type] || leaveTypeConfig.FULL;
         let title = config.label;
-        if (
+        if (leave.category === "FAMILY_EVENT") {
+          title = getFamilyEventLabel(leave.event_type, leave.event_relation);
+        } else if (
           leave.leave_type === "QUARTER_DAY" &&
           leave.start_time &&
           leave.end_time
@@ -116,9 +128,22 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
       });
   }, [leaves]);
 
-  const eventStyleGetter = () => ({
-    style: { background: "transparent", border: "none", padding: 0 },
-  });
+  const eventStyleGetter = (event) => {
+    const leave = event.resource;
+    const dot =
+      leave.category === "FAMILY_EVENT"
+        ? FAMILY_EVENT_STYLE.dot
+        : (leaveTypeConfig[leave.leave_type] || leaveTypeConfig.FULL).dot;
+    // 연한 배경 막대를 그려 여러 날짜 일정이 기간만큼 보이도록 함
+    return {
+      style: {
+        background: `${dot}1f`, // 약 12% 불투명도
+        border: `1px solid ${dot}40`,
+        borderRadius: "4px",
+        padding: 0,
+      },
+    };
+  };
 
   const handleSelectSlot = ({ start }) => {
     onSelectDate(start);
@@ -160,8 +185,8 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
       />
 
       {/* 범례 */}
-      <div className="mt-8 flex gap-4 text-sm">
-        {Object.values(leaveTypeConfig).map((cfg) => (
+      <div className="mt-8 flex flex-wrap gap-4 text-sm">
+        {[...Object.values(leaveTypeConfig), FAMILY_EVENT_STYLE].map((cfg) => (
           <div key={cfg.label} className="flex items-center gap-1.5">
             <span
               className="w-2.5 h-2.5 rounded-full flex-shrink-0"

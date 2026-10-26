@@ -2,6 +2,7 @@
 
 import { format, isBefore, startOfDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { getFamilyEventLabel } from '@/lib/familyEvent';
 
 const leaveTypeLabels = {
   FULL: '연차',
@@ -16,6 +17,22 @@ const leaveTypeBadges = {
   PM_HALF: 'bg-green-100 text-green-800',
   QUARTER_DAY: 'bg-cyan-100 text-cyan-800',
 };
+
+const FAMILY_EVENT_BADGE = 'bg-purple-100 text-purple-800';
+
+// 연차/경조사 공통: 배지 라벨과 색상 반환
+function getBadge(leave) {
+  if (leave.category === 'FAMILY_EVENT') {
+    return {
+      label: getFamilyEventLabel(leave.event_type, leave.event_relation),
+      className: FAMILY_EVENT_BADGE,
+    };
+  }
+  return {
+    label: leaveTypeLabels[leave.leave_type],
+    className: leaveTypeBadges[leave.leave_type],
+  };
+}
 
 export default function LeaveList({ leaves, onCancel }) {
   const sortedLeaves = [...leaves].sort((a, b) => {
@@ -71,13 +88,16 @@ export default function LeaveList({ leaves, onCancel }) {
                   <span className="font-medium text-gray-900">
                     {dateDisplay}
                   </span>
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded ${
-                      leaveTypeBadges[leave.leave_type]
-                    }`}
-                  >
-                    {leaveTypeLabels[leave.leave_type]}
-                  </span>
+                  {(() => {
+                    const badge = getBadge(leave);
+                    return (
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded ${badge.className}`}
+                      >
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
                   {leave.leave_type === 'QUARTER_DAY' && leave.start_time && leave.end_time && (
                     <span className="text-xs text-gray-500">
                       {leave.start_time.substring(0, 5)} - {leave.end_time.substring(0, 5)}

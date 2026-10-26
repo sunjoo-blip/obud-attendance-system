@@ -137,6 +137,58 @@ export async function sendLeaveCancellationNotification({
   }
 }
 
+// 경조사 기간 문자열 생성 (요일 포함)
+function formatFamilyEventPeriod({ startDate, endDate }) {
+  const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+  const formatWithWeekday = (dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const day = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    return `${dateStr}(${WEEKDAYS[day]})`;
+  };
+
+  return startDate === endDate
+    ? formatWithWeekday(startDate)
+    : `${formatWithWeekday(startDate)} ~ ${formatWithWeekday(endDate)}`;
+}
+
+// 경조사 신청 시 채널에 알림 발송
+export async function sendFamilyEventNotification({
+  userName,
+  eventLabel,
+  startDate,
+  endDate,
+}) {
+  try {
+    const period = formatFamilyEventPeriod({ startDate, endDate });
+    const text = `:bouquet: *${userName}* 님이 *경조사(${eventLabel})* 를 등록했습니다.\n📅 ${period}`;
+
+    await slack.chat.postMessage({ channel: LEAVE_CHANNEL, text });
+    console.log(`Sent family event notification for ${userName} to ${LEAVE_CHANNEL}`);
+  } catch (error) {
+    console.error('Slack family event notification error:', error);
+    // 알림 실패는 무시 (경조사 등록은 정상 처리)
+  }
+}
+
+// 경조사 취소 시 채널에 알림 발송
+export async function sendFamilyEventCancellationNotification({
+  userName,
+  eventLabel,
+  startDate,
+  endDate,
+}) {
+  try {
+    const period = formatFamilyEventPeriod({ startDate, endDate });
+    const text = `:x: *${userName}* 님이 *경조사(${eventLabel})* 를 취소했습니다.\n📅 ${period}`;
+
+    await slack.chat.postMessage({ channel: LEAVE_CHANNEL, text });
+    console.log(`Sent family event cancellation for ${userName} to ${LEAVE_CHANNEL}`);
+  } catch (error) {
+    console.error('Slack family event cancellation error:', error);
+    // 알림 실패는 무시 (경조사 취소는 정상 처리)
+  }
+}
+
 // Slack 사용자 ID 찾기 (이메일로 검색)
 export async function findSlackUserByEmail(email) {
   try {

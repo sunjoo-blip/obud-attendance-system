@@ -170,7 +170,7 @@ export default function DashboardPage() {
                   onClick={() => setShowModal(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
-                  + 연차 신청
+                  + 연차/경조사
                 </button>
               </div>
               <LeaveCalendar leaves={leaves} onSelectDate={handleDateSelect} />

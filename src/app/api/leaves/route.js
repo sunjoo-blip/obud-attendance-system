@@ -1,9 +1,16 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { query } from "@/lib/db";
-import { addGoogleCalendarEvent } from "@/lib/googleCalendar";
-import { sendLeaveNotification } from "@/lib/slack";
+import {
+  addGoogleCalendarEvent,
+  addFamilyEventCalendarEvent,
+} from "@/lib/googleCalendar";
+import {
+  sendLeaveNotification,
+  sendFamilyEventNotification,
+} from "@/lib/slack";
 import { LEAVE_TYPE_CONFIG, calculateLeaveAmount } from "@/lib/leaveCalculator";
+import { getFamilyEventInfo, getFamilyEventLabel } from "@/lib/familyEvent";
 
 // GET: 내 연차 조회
 export async function GET(req) {
@@ -18,6 +25,7 @@ export async function GET(req) {
               TO_CHAR(start_date, 'YYYY-MM-DD') as start_date,
               TO_CHAR(end_date, 'YYYY-MM-DD') as end_date,
               leave_type, start_time, end_time, status, google_calendar_event_id,
+              category, event_type, event_relation,
               created_at, cancelled_at
        FROM leave_requests
        WHERE user_id = $1
@@ -40,8 +48,14 @@ export async function POST(req) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { startDate, endDate, leaveType, startTime, endTime } =
-      await req.json();
+    const body = await req.json();
+
+    // 경조사 신청은 별도 처리 (연차 잔액 차감 없음)
+    if (body.category === "FAMILY_EVENT") {
+      return handleFamilyEventRequest(session, body);
+    }
+
+    const { startDate, endDate, leaveType, startTime, endTime } = body;
 
     if (!startDate || !endDate || !leaveType) {
       return Response.json(
@@ -243,6 +257,90 @@ export async function POST(req) {
     return Response.json({ success: true, leave });
   } catch (error) {
     console.error("Create leave error:", error);
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// 경조사 신청 처리 (연차 잔액에 영향 없는 유급 특별휴가)
+async function handleFamilyEventRequest(session, body) {
+  try {
+    const { eventType, eventRelation, startDate, endDate } = body;
+
+    if (!eventType || !eventRelation || !startDate || !endDate) {
+      return Response.json(
+        { error: "경조사 구분, 대상, 기간을 모두 입력해주세요." },
+        { status: 400 },
+      );
+    }
+
+    const info = getFamilyEventInfo(eventType, eventRelation);
+    if (!info) {
+      return Response.json(
+        { error: "유효하지 않은 경조사 종류입니다." },
+        { status: 400 },
+      );
+    }
+
+    // 날짜 검증
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (start > end) {
+      return Response.json(
+        { error: "시작일은 종료일보다 이전이어야 합니다." },
+        { status: 400 },
+      );
+    }
+
+    // 경조사 신청 생성 (종일 FULL 이벤트로 저장, 잔액 차감 없음)
+    const leaveResult = await query(
+      `INSERT INTO leave_requests
+         (user_id, start_date, end_date, leave_type, status, category, event_type, event_relation, birthday_used)
+       VALUES ($1, $2, $3, 'FULL', 'APPROVED', 'FAMILY_EVENT', $4, $5, 0)
+       RETURNING *`,
+      [session.user.id, startDate, endDate, eventType, eventRelation],
+    );
+
+    const leave = leaveResult.rows[0];
+    const eventLabel = getFamilyEventLabel(eventType, eventRelation);
+
+    // 사용자 이름 조회
+    const userResult = await query(`SELECT name FROM users WHERE id = $1`, [
+      session.user.id,
+    ]);
+    const userName = userResult.rows[0]?.name || session.user.name;
+
+    // Google Calendar에 경조사 이벤트 추가
+    try {
+      const eventId = await addFamilyEventCalendarEvent({
+        userName,
+        startDate,
+        endDate,
+        eventLabel,
+      });
+
+      await query(
+        `UPDATE leave_requests SET google_calendar_event_id = $1 WHERE id = $2`,
+        [eventId, leave.id],
+      );
+    } catch (calendarError) {
+      console.error("Google Calendar error:", calendarError);
+    }
+
+    // Slack 채널 알림 발송
+    try {
+      await sendFamilyEventNotification({
+        userName,
+        eventLabel,
+        startDate,
+        endDate,
+      });
+    } catch (slackError) {
+      console.error("Slack notification error:", slackError);
+    }
+
+    return Response.json({ success: true, leave });
+  } catch (error) {
+    console.error("Create family event error:", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
