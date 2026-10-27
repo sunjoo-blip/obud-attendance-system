@@ -160,7 +160,7 @@ export async function sendFamilyEventNotification({
 }) {
   try {
     const period = formatFamilyEventPeriod({ startDate, endDate });
-    const text = `:bouquet: *${userName}* 님이 *경조사(${eventLabel})* 를 등록했습니다.\n📅 ${period}`;
+    const text = `:bouquet: *${userName}* 님이 *경조사* 를 등록했습니다.\n📅 ${period}`;
 
     await slack.chat.postMessage({ channel: LEAVE_CHANNEL, text });
     console.log(`Sent family event notification for ${userName} to ${LEAVE_CHANNEL}`);
