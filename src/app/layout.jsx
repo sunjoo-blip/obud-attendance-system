@@ -10,6 +10,12 @@ export const metadata = {
   description: "Obud 스타트업 연차 관리 시스템",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="ko">

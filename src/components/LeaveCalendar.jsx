@@ -154,38 +154,41 @@ export default function LeaveCalendar({ leaves, onSelectDate }) {
   };
 
   return (
-    <div className="h-[600px]">
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: "100%" }}
-        eventPropGetter={eventStyleGetter}
-        onSelectSlot={handleSelectSlot}
-        selectable
-        date={currentDate}
-        onNavigate={handleNavigate}
-        messages={{
-          today: "오늘",
-          previous: "이전",
-          next: "다음",
-          month: "월",
-          week: "주",
-          day: "일",
-          agenda: "일정",
-          date: "날짜",
-          time: "시간",
-          event: "일정",
-          noEventsInRange: "해당 기간에 일정이 없습니다.",
-        }}
-        views={["month"]}
-        defaultView="month"
-        components={{ toolbar: CustomToolbar, event: CustomEvent }}
-      />
+    <div>
+      <div className="h-[460px] sm:h-[600px]">
+        <Calendar
+          localizer={localizer}
+          culture="ko"
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: "100%" }}
+          eventPropGetter={eventStyleGetter}
+          onSelectSlot={handleSelectSlot}
+          selectable
+          date={currentDate}
+          onNavigate={handleNavigate}
+          messages={{
+            today: "오늘",
+            previous: "이전",
+            next: "다음",
+            month: "월",
+            week: "주",
+            day: "일",
+            agenda: "일정",
+            date: "날짜",
+            time: "시간",
+            event: "일정",
+            noEventsInRange: "해당 기간에 일정이 없습니다.",
+          }}
+          views={["month"]}
+          defaultView="month"
+          components={{ toolbar: CustomToolbar, event: CustomEvent }}
+        />
+      </div>
 
       {/* 범례 */}
-      <div className="mt-8 flex flex-wrap gap-4 text-sm">
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm">
         {[...Object.values(leaveTypeConfig), FAMILY_EVENT_STYLE].map((cfg) => (
           <div key={cfg.label} className="flex items-center gap-1.5">
             <span

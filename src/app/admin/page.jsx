@@ -182,16 +182,16 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <button
                 onClick={() => router.push("/dashboard")}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-sm sm:text-base text-gray-600 hover:text-gray-900 whitespace-nowrap"
               >
                 ← 돌아가기
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
                 Admin Dashboard
               </h1>
             </div>
@@ -200,11 +200,14 @@ export default function AdminPage() {
       </header>
 
       {/* 메인 컨텐츠 */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* 전체 현황 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">📊 전체 현황</h2>
-          <div className="overflow-x-auto">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+            📊 전체 현황
+          </h2>
+          {/* 데스크톱: 테이블 */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b">
@@ -298,13 +301,99 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
+
+          {/* 모바일: 카드 */}
+          <div className="md:hidden space-y-3">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="border border-gray-200 rounded-lg p-4"
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {user.profile_image && (
+                      <Image
+                        src={user.profile_image}
+                        alt={user.name}
+                        width={32}
+                        height={32}
+                        className="rounded-full flex-shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-900 truncate">
+                        {user.name}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {user.email}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    ref={openMenuId === user.id ? menuRef : null}
+                    onClick={(e) => {
+                      if (openMenuId === user.id) {
+                        setOpenMenuId(null);
+                        return;
+                      }
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setOpenMenuPos({
+                        top: rect.bottom + 4,
+                        right: window.innerWidth - rect.right,
+                      });
+                      setOpenMenuId(user.id);
+                    }}
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-1 flex-shrink-0"
+                  >
+                    작업
+                    <span className="text-xs">▾</span>
+                  </button>
+                </div>
+                <div className="text-xs text-gray-500 mb-3">
+                  재직{" "}
+                  <span className="text-gray-800 font-medium">
+                    {calcTenure(user.join_date) ?? "미설정"}
+                  </span>
+                  {user.join_date && (
+                    <span className="text-gray-400"> · {user.join_date}</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div>
+                    <div className="text-xs text-gray-400">전체</div>
+                    <div className="font-bold text-blue-600">
+                      {user.total_leaves || 0}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">사용</div>
+                    <div className="font-bold text-gray-600">
+                      {user.used_leaves || 0}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">남음</div>
+                    <div className="font-bold text-green-600">
+                      {user.remaining_leaves || 0}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">생일</div>
+                    <div className="font-bold text-pink-500">
+                      {user.birthday_leaves || 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* 전체 연차 내역 */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           {/* 헤더 행: 제목 + 필터 + 뷰 토글 */}
-          <div className="flex flex-wrap items-center gap-3 mb-5">
-            <h2 className="text-xl font-bold text-gray-900 mr-auto">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-5">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 w-full sm:w-auto sm:mr-auto">
               📋 전체 연차 내역
             </h2>
 
@@ -526,7 +615,7 @@ export default function AdminPage() {
                         return (
                           <div
                             key={di}
-                            className={`min-h-[80px] border-r last:border-r-0 p-1 ${!day ? "bg-gray-50" : ""}`}
+                            className={`min-h-[56px] sm:min-h-[80px] border-r last:border-r-0 p-0.5 sm:p-1 ${!day ? "bg-gray-50" : ""}`}
                           >
                             {day && (
                               <>
@@ -545,7 +634,7 @@ export default function AdminPage() {
                                       return (
                                         <div
                                           key={l.id}
-                                          className="text-xs px-1.5 py-0.5 rounded bg-purple-400 text-white truncate"
+                                          className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded bg-purple-400 text-white truncate"
                                           title={`${l.user_name} · 경조사 ${famLabel}`}
                                         >
                                           {l.user_name} - {famLabel}
@@ -556,7 +645,7 @@ export default function AdminPage() {
                                       return (
                                         <div
                                           key={l.id}
-                                          className="text-xs px-1.5 py-0.5 rounded bg-red-300 text-white truncate"
+                                          className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded bg-red-300 text-white truncate"
                                           title={`${l.user_name} · 연차`}
                                         >
                                           {l.user_name} - 휴가
@@ -583,7 +672,7 @@ export default function AdminPage() {
                                     return (
                                       <div
                                         key={l.id}
-                                        className="text-xs flex items-center gap-0.5 truncate"
+                                        className="text-[10px] sm:text-xs flex items-center gap-0.5 truncate"
                                         title={fullTitle}
                                       >
                                         <span
@@ -629,7 +718,7 @@ export default function AdminPage() {
 
             return (
               <>
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
@@ -693,6 +782,63 @@ export default function AdminPage() {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* 모바일: 카드 */}
+                <div className="md:hidden space-y-2">
+                  {paginated.length === 0 ? (
+                    <p className="text-center py-8 text-gray-400 text-sm">
+                      해당 조건의 연차 내역이 없습니다.
+                    </p>
+                  ) : (
+                    paginated.map((leave) => {
+                      const dateDisplay =
+                        leave.start_date === leave.end_date
+                          ? leave.start_date
+                          : `${leave.start_date} ~ ${leave.end_date}`;
+                      return (
+                        <div
+                          key={leave.id}
+                          className="border border-gray-200 rounded-lg p-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="font-medium text-gray-900">
+                                {leave.user_name}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                {dateDisplay}
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span
+                                  className={`px-2 py-1 text-xs rounded ${leaveTypeBadge(leave)}`}
+                                >
+                                  {leaveTypeLabel(leave)}
+                                </span>
+                                {leave.status === "APPROVED" ? (
+                                  <span className="text-xs text-green-600">
+                                    승인
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-gray-500">
+                                    취소
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {leave.status === "APPROVED" && (
+                              <button
+                                onClick={() => handleDeleteLeave(leave.id)}
+                                className="px-3 py-1 text-red-600 hover:bg-red-50 rounded text-sm flex-shrink-0"
+                              >
+                                삭제
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
                 {totalPages > 1 && (
                   <div className="flex justify-center items-center gap-2 mt-4">
@@ -789,7 +935,7 @@ export default function AdminPage() {
           onClick={() => setSettlementModal(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4"
+            className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b">
@@ -813,7 +959,8 @@ export default function AdminPage() {
                   정산 내역이 없습니다.
                 </div>
               ) : (
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[560px]">
                   <thead>
                     <tr className="border-b text-gray-500">
                       <th className="text-left py-2 px-3">정산일</th>
@@ -861,6 +1008,7 @@ export default function AdminPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </div>

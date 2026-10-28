@@ -52,3 +52,29 @@ body {
 .rbc-today {
   background-color: #f0f7ff;
 }
+
+/* 모바일: 달력 셀/글자 축소 */
+@media (max-width: 640px) {
+  .rbc-event {
+    padding: 1px 2px;
+    font-size: 10px;
+  }
+
+  .rbc-header {
+    padding: 4px 2px;
+    font-size: 11px;
+  }
+
+  .rbc-date-cell {
+    font-size: 11px;
+    padding: 2px 4px 0 0;
+  }
+
+  .rbc-show-more {
+    font-size: 10px;
+  }
+
+  .rbc-month-view {
+    font-size: 11px;
+  }
+}
